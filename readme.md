@@ -104,16 +104,16 @@ Cada módulo em `src/` exporta uma função (`createMascot()`, `createMask()`,
 
 ---
 
-## Equipe e divisão de tarefas (entrega parcial)
+## Equipe
 
-| Membro | Módulo principal |
-|---|---|
-| Gabrielle Suemi Iquejiri Alencar | Integração e cena base (`main.js`, `sceneBase.js`, `config.js`) |
-| Gustavo Soares de Lima | Modelagem do mascote (`mascot.js`) |
-| Heloiza Helena Leal Coimbra | Modelagem da máscara mística (`mask.js`) |
-| Igor Ferreira Ferraz | Materiais e iluminação (`materials.js`, `lights.js`) |
-| João Vitor Mâncio Chaves | Cenário e obstáculos (`environment.js`) |
-| Maria Fernanda Siqueira de Moraes | Câmera, controles, HUD e validação (`cameraControls.js`, `hud.js`) |
+| Membro 
+|---|
+| Gabrielle Suemi Iquejiri Alencar |
+| Gustavo Soares de Lima |
+| Heloiza Helena Leal Coimbra | 
+| Igor Ferreira Ferraz |
+| João Vitor Mâncio Chaves |
+| Maria Fernanda Siqueira de Moraes | 
 
 ---
 
