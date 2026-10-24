@@ -1,8 +1,8 @@
 # Créditos e origens
 
 ## Modelos 3D
-- Mascote (Bilby): modelado pelo grupo com primitivas do Three.js (Gustavo S. de Lima)
-- Máscara mística: modelada pelo grupo com primitivas do Three.js (Heloiza H. L. Coimbra)
+- Mascote (Bilby): modelado pelo grupo com primitivas do Three.js 
+- Máscara mística: modelada pelo grupo com primitivas do Three.js 
 
 ## Texturas
 - (Adicionar aqui cada textura externa: autor, URL, licença)
