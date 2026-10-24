@@ -1,13 +1,34 @@
 <!doctype html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Bilby Blitz</title>
-  </head>
-  <body>
-    <!-- Área reservada para a cena 3D e a interface do jogo. -->
-    <main id="game"></main>
-    <script type="module" src="./src/main.js"></script>
-  </body>
+
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+  }
+
+  canvas {
+    display: block;
+  }
+
+  /* Adicione estilos adicionais conforme necessário */
+</style>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script type="importmap">
+    { "imports": 
+      { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } 
+    }
+  </script>
+  <title>Bilby Blitz</title>
+</head>
+
+<body>
+  <!-- Área reservada para a cena 3D e a interface do jogo. -->
+  <main id="game"></main>
+  <script type="module" src="./src/main.js"></script>
+</body>
+
 </html>
