@@ -18,7 +18,7 @@ export class SceneBase {
         this.camera = new THREE.PerspectiveCamera(CAMERA_FOV, aspectRatio, CAMERA_NEAR, CAMERA_FAR);
         this.camera.position.set( //posição inicial da câmera, ajustada para olhar para o mascote.
             MASCOT_INITIAL_POSITION.x,
-            MASCOT_INITIAL_POSITION.y + 10,
+            MASCOT_INITIAL_POSITION.y + 1.6, // altura da câmera ajustada para a altura do mascote.
             MASCOT_INITIAL_POSITION.z + 1
         );
         this.camera.lookAt( // Olhar para a posição do mascote, mas com a altura da câmera ajustada.

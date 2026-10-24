@@ -21,6 +21,12 @@ class Game {
         this.camera = this.sceneBase.camera;
         this.renderer = this.sceneBase.renderer;
 
+        this.grid = new THREE.GridHelper(100, 100);
+        this.scene.add(this.grid);
+
+        this.axesHelper = new THREE.AxesHelper(5);
+        this.scene.add(this.axesHelper);
+
         // Cubo giratório para debug.
         // this.debugCube = new THREE.Mesh(
         //     new THREE.BoxGeometry(1, 1, 1),
@@ -28,9 +34,8 @@ class Game {
         // );
         // this.scene.add(this.debugCube);
 
-
-        this.animate()
-        // Inicializar o mascote e adicioná-lo à cena    
+        this.animate();
+        // Inicializar o mascote e adicioná-lo à cena
     }
 }
 
