@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { criarArvore } from './components/three-environment/criarArvore.js';
+import { criarArvore } from './components/criarArvore.js';
+import { criarPedra } from './components/criarPedra.js';
 
 export function createEnvironment(scene) {
     // Terra: largura 8, comprimento 60 e superfície superior em y = 0.
@@ -32,6 +33,16 @@ export function createEnvironment(scene) {
             const x = lado * (5.5 + Math.random() * 7);
             const z = -(1.5 + Math.random() * 57);
             scene.add(criarArvore(x, z));
+        }
+    }
+
+    // Menos pedras que árvores, com margem para ficarem dentro da grama.
+    const pedrasPorLado = 4;
+    for (const lado of [-1, 1]) {
+        for (let i = 0; i < pedrasPorLado; i++) {
+            const x = lado * (5.2 + Math.random() * 7.6);
+            const z = -(1.2 + Math.random() * 57.6);
+            scene.add(criarPedra(x, z));
         }
     }
 
