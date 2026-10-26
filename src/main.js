@@ -1,6 +1,7 @@
 // Ponto de entrada previsto para integrar a cena, os módulos do jogo e o HUD.
 
 import { SceneBase } from './sceneBase.js';
+import { createEnvironment } from './environment.js';
 import * as THREE from 'three';
 
 class Game {
@@ -20,6 +21,12 @@ class Game {
         this.scene = this.sceneBase.scene;
         this.camera = this.sceneBase.camera;
         this.renderer = this.sceneBase.renderer;
+
+        createEnvironment(this.scene);
+
+        // Luz provisória até a integração da iluminação definitiva da P4.
+        const luz = new THREE.AmbientLight(0xffffff, 2);
+        this.scene.add(luz);
 
         this.grid = new THREE.GridHelper(100, 100);
         this.scene.add(this.grid);
