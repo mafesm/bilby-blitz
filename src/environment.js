@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { criarArvore } from './components/three-environment/criarArvore.js';
 
 export function createEnvironment(scene) {
     // Terra: largura 8, comprimento 60 e superfície superior em y = 0.
@@ -14,15 +15,25 @@ export function createEnvironment(scene) {
     const gramaMaterial = new THREE.MeshStandardMaterial({
         color: 0x4CAF50
     });
-    const gramaGeometry = new THREE.BoxGeometry(1, 0.2, 60);
+    const gramaGeometry = new THREE.BoxGeometry(10, 0.2, 60);
 
     const gramaEsquerda = new THREE.Mesh(gramaGeometry, gramaMaterial);
-    gramaEsquerda.position.set(-4.5, -0.1, -30);
+    gramaEsquerda.position.set(-9, -0.1, -30);
     scene.add(gramaEsquerda);
 
     const gramaDireita = new THREE.Mesh(gramaGeometry, gramaMaterial);
-    gramaDireita.position.set(4.5, -0.1, -30);
+    gramaDireita.position.set(9, -0.1, -30);
     scene.add(gramaDireita);
+
+    // Margem de 1.5 para manter as copas dentro da grama e fora do caminho.
+    const arvoresPorLado = 12;
+    for (const lado of [-1, 1]) {
+        for (let i = 0; i < arvoresPorLado; i++) {
+            const x = lado * (5.5 + Math.random() * 7);
+            const z = -(1.5 + Math.random() * 57);
+            scene.add(criarArvore(x, z));
+        }
+    }
 
     // Geometria e material compartilhados por todas as caixas.
     const caixaGeometry = new THREE.BoxGeometry(1.5, 1.5, 1.5);
