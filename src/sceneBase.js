@@ -34,6 +34,11 @@ export class SceneBase {
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.renderer.setSize(window.innerWidth, window.innerHeight); // Ajustar o tamanho do renderizador para a janela.
         this.renderer.setPixelRatio(window.devicePixelRatio); // Ajustar a razão de pixels para a densidade de pixels do dispositivo.
+        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        this.renderer.toneMappingExposure = 1.05;
         document.getElementById('game').appendChild(this.renderer.domElement); // Adicionar o elemento canvas do renderizador 
         // ao corpo do documento.
     }

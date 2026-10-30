@@ -1,14 +1,20 @@
 // Ponto de entrada previsto para integrar a cena, os módulos do jogo e o HUD.
 
 import { SceneBase } from './sceneBase.js';
+import { loadMascot } from './mascot.js';
+import { setupLights } from './lights.js';
+import { CameraControls } from './cameraControls.js';
+import { createEnvironment } from './environment.js';
 import * as THREE from 'three';
 
 class Game {
     constructor() {
+        this.clock = new THREE.Clock();
         this.init();
     }
     animate() {
         requestAnimationFrame(this.animate.bind(this)); // Chamar a função animate novamente para criar um loop de animação.
+        this.cameraControls.update(this.clock.getDelta());
         // this.debugCube.rotation.x += 0.01;
         // this.debugCube.rotation.y += 0.01;
         this.renderer.render(this.scene, this.camera);
@@ -20,12 +26,15 @@ class Game {
         this.scene = this.sceneBase.scene;
         this.camera = this.sceneBase.camera;
         this.renderer = this.sceneBase.renderer;
+        this.cameraControls = new CameraControls(this.camera);
 
-        this.grid = new THREE.GridHelper(100, 100);
-        this.scene.add(this.grid);
-
-        this.axesHelper = new THREE.AxesHelper(5);
-        this.scene.add(this.axesHelper);
+        setupLights(this.scene);
+        createEnvironment(this.scene);
+        loadMascot(this.scene).then((mascot) => {
+            this.cameraControls.setTarget(mascot);
+        }).catch(() => {
+            this.cameraControls.dispose();
+        });
 
         // Cubo giratório para debug.
         // this.debugCube = new THREE.Mesh(
