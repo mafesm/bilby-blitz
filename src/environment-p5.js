@@ -2,13 +2,14 @@ import * as THREE from 'three';
 import { criarArvore } from './components/criarArvore.js';
 import { criarArvoreTresCones } from './components/criarArvoreTresCones.js';
 import { criarPedra } from './components/criarPedra.js';
+import { criarCaixa } from './components/criarCaixa.js';
 
 export function createEnvironment(scene) {
     const gramaMaterial = new THREE.MeshStandardMaterial({
         color: 0x4CAF50,
         roughness: 1
     });
-    const gramaGeometry = new THREE.BoxGeometry(120, 0.2, 120);
+    const gramaGeometry = new THREE.BoxGeometry(120, 0.2, 220);
     const chao = new THREE.Mesh(gramaGeometry, gramaMaterial);
 
     // X: -60 a 60; Z: -110 a 10; superfície superior em Y = 0.
@@ -22,10 +23,10 @@ export function createEnvironment(scene) {
         color: 0x2E7D32,
         roughness: 1
     });
-    const lateralGeometry = new THREE.BoxGeometry(0.6, 1, 82);
+    const lateralGeometry = new THREE.BoxGeometry(0.26, 1, 220);
     const cercas = [
-        [lateralGeometry, -5.3, -38],
-        [lateralGeometry, 5.3, -38]
+        [lateralGeometry, -5.3, -20],
+        [lateralGeometry, 5.3, -20]
     ];
 
     for (const [geometry, x, z] of cercas) {
@@ -57,6 +58,21 @@ export function createEnvironment(scene) {
             });
             scene.add(objeto);
         }
+    }
+
+    const posicoesCaixas = [
+        [0, 0.75, -8],        // Centro, perto do início.
+        [-2, 0.75, -22],      // Duas caixas mais à frente.
+        [2, 0.75, -22],
+        [3, 0.75, -40],       // Duas caixas
+        [0.5, 0.75, -40],       
+        [-3.3, 0.75, -70.2],    // Três caixas perto do final da área de movimento.
+        [0, 0.75, -70],
+        [2.5, 0.75, -70]
+    ];
+
+    for (const [x, y, z] of posicoesCaixas) {
+        scene.add(criarCaixa(x, y, z));
     }
 
     return chao;
