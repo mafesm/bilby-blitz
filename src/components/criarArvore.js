@@ -1,12 +1,12 @@
 import * as TREE from 'three';
+import { getMaterials } from '../materials.js';
 
 // Recursos compartilhados entre as árvores do cenário.
 const troncoGeometry = new TREE.CylinderGeometry(0.3, 0.4, 2, 8);
-const troncoMaterial = new TREE.MeshStandardMaterial({ color: 0x80552d });
 const copaGeometry = new TREE.ConeGeometry(1.5, 3, 8);
-const copaMaterial = new TREE.MeshStandardMaterial({ color: 0x388b41 });
 
 export function criarArvore(x, z) {
+    const { bark: troncoMaterial, foliage: copaMaterial } = getMaterials();
     const arvore = new TREE.Group();
 
     const tronco = new TREE.Mesh(troncoGeometry, troncoMaterial);

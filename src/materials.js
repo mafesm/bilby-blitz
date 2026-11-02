@@ -1,5 +1,12 @@
 import * as THREE from 'three';
 
+let sharedMaterials;
+
+export function getMaterials() {
+    sharedMaterials ??= createMaterials();
+    return sharedMaterials;
+}
+
 export function createMaterials() {
     const textures = createTextures();
     const materials = {
@@ -9,6 +16,11 @@ export function createMaterials() {
             roughness: 1.0,
             metalness: 0.0
         }),
+
+        foliage: new THREE.MeshStandardMaterial({ color: 0x388b41, roughness: 1 }),
+        hedge: new THREE.MeshStandardMaterial({ color: 0x2E7D32, roughness: 1 }),
+        bark: new THREE.MeshStandardMaterial({ color: 0x80552d, roughness: 1 }),
+        cutWood: new THREE.MeshStandardMaterial({ color: 0xc89b64, roughness: 1 }),
 
         // Material para caixas de madeira
         wood: new THREE.MeshStandardMaterial({
@@ -23,6 +35,7 @@ export function createMaterials() {
         // Material para pedras e plataformas
         stone: new THREE.MeshStandardMaterial({
             color: 0x808080,
+            flatShading: true,
             roughness: 0.95,
             metalness: 0.0
         }),

@@ -1,8 +1,7 @@
 import * as THREE from 'three';
+import { getMaterials } from '../materials.js';
 
 const troncoGeometry = new THREE.CylinderGeometry(0.3, 0.4, 2, 8);
-const troncoMaterial = new THREE.MeshStandardMaterial({ color: 0x80552d });
-const copaMaterial = new THREE.MeshStandardMaterial({ color: 0x388b41 });
 const camadas = [
     { geometry: new THREE.ConeGeometry(1.7, 2.4, 8), y: 2.6 },
     { geometry: new THREE.ConeGeometry(1.35, 2.2, 8), y: 3.5 },
@@ -10,6 +9,7 @@ const camadas = [
 ];
 
 export function criarArvoreTresCones(x, z) {
+    const { bark: troncoMaterial, foliage: copaMaterial } = getMaterials();
     const arvore = new THREE.Group();
 
     const tronco = new THREE.Mesh(troncoGeometry, troncoMaterial);

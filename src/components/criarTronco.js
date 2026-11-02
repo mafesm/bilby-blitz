@@ -1,16 +1,10 @@
 import * as THREE from 'three';
+import { getMaterials } from '../materials.js';
 
 const troncoGeometry = new THREE.CylinderGeometry(0.55, 0.55, 3, 10);
-const cascaMaterial = new THREE.MeshStandardMaterial({
-    color: 0x80552d,
-    roughness: 1
-});
-const corteMaterial = new THREE.MeshStandardMaterial({
-    color: 0xc89b64,
-    roughness: 1
-});
 
 export function criarTronco(x, z, angulo = Math.PI / 8) {
+    const { bark: cascaMaterial, cutWood: corteMaterial } = getMaterials();
     // O cilindro usa casca na lateral e madeira clara nas duas pontas.
     const tronco = new THREE.Mesh(troncoGeometry, [
         cascaMaterial, corteMaterial, corteMaterial

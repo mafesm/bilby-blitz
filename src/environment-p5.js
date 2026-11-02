@@ -5,16 +5,14 @@ import { criarArvoreTresCones } from './components/criarArvoreTresCones.js';
 import { criarPedra } from './components/criarPedra.js';
 import { criarCaixa } from './components/criarCaixa.js';
 import { criarTronco } from './components/criarTronco.js';
+import { getMaterials } from './materials.js';
 
 export function createEnvironment(scene) {
     // A névoa mistura o cenário distante com a cor do céu.
     // Começa a 20 unidades da câmera e fica completa a 55 unidades.
     scene.fog = new THREE.Fog(SCENE_BACKGROUND_COLOR, 30, 65);
 
-    const gramaMaterial = new THREE.MeshStandardMaterial({
-        color: 0x4CAF50,
-        roughness: 1
-    });
+    const { ground: gramaMaterial, hedge: cercaMaterial } = getMaterials();
     const gramaGeometry = new THREE.BoxGeometry(120, 0.2, 220);
     const chao = new THREE.Mesh(gramaGeometry, gramaMaterial);
 
@@ -25,10 +23,6 @@ export function createEnvironment(scene) {
 
     // Cerca viva nas laterais do percurso, com altura de 1 unidade.
     // Uma margem entre a cerca e os limites dos controles acomoda o personagem.
-    const cercaMaterial = new THREE.MeshStandardMaterial({
-        color: 0x2E7D32,
-        roughness: 1
-    });
     const lateralGeometry = new THREE.BoxGeometry(0.26, 1, 220);
     const cercas = [
         [lateralGeometry, -5.3, -20],

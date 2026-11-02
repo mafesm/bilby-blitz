@@ -1,14 +1,11 @@
 import * as THREE from 'three';
+import { getMaterials } from '../materials.js';
 
 // Geometria e material compartilhados entre as pedras.
 const pedraGeometry = new THREE.DodecahedronGeometry(1, 0);
-const pedraMaterial = new THREE.MeshStandardMaterial({
-    color: 0x808080,
-    roughness: 1,
-    flatShading: true
-});
 
 export function criarPedra(x, z) {
+    const { stone: pedraMaterial } = getMaterials();
     const pedra = new THREE.Mesh(pedraGeometry, pedraMaterial);
 
     // Proporções variadas e formato achatado para uma aparência natural.
