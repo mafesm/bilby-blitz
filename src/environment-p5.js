@@ -4,6 +4,7 @@ import { criarArvore } from './components/criarArvore.js';
 import { criarArvoreTresCones } from './components/criarArvoreTresCones.js';
 import { criarPedra } from './components/criarPedra.js';
 import { criarCaixa } from './components/criarCaixa.js';
+import { criarTronco } from './components/criarTronco.js';
 
 export function createEnvironment(scene) {
     // A névoa mistura o cenário distante com a cor do céu.
@@ -43,6 +44,10 @@ export function createEnvironment(scene) {
         scene.add(cerca);
     }
 
+    //Troncos de árvore
+    scene.add(criarTronco( -1.2, -40));
+    scene.add(criarTronco( 0.75, -90));
+
     const arvoresPorLado = 30;
     const pedrasPorLado = 20;
 
@@ -68,9 +73,7 @@ export function createEnvironment(scene) {
     const posicoesCaixas = [
         [0, 0.75, -8],        // Centro, perto do início.
         [-2, 0.75, -22],      // Duas caixas mais à frente.
-        [2, 0.75, -22],
-        [3, 0.75, -40],       // Duas caixas
-        [0.5, 0.75, -40],       
+        [2, 0.75, -22],      
         [-3.3, 0.75, -70.2],    // Três caixas perto do final da área de movimento.
         [0, 0.75, -70],
         [2.5, 0.75, -70]
