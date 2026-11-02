@@ -1,4 +1,4 @@
-import * as TREE from 'tree';
+import * as TREE from 'three';
 
 // Recursos compartilhados entre as árvores do cenário.
 const troncoGeometry = new TREE.CylinderGeometry(0.3, 0.4, 2, 8);

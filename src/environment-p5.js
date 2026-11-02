@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { criarArvore } from './components/criarArvore.js';
+import { criarArvoreTresCones } from './components/criarArvoreTresCones.js';
 
 export function createEnvironment(scene) {
     const gramaMaterial = new THREE.MeshStandardMaterial({
