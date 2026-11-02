@@ -6,6 +6,7 @@ import { criarPedra } from './components/criarPedra.js';
 import { criarCaixa } from './components/criarCaixa.js';
 import { criarTronco } from './components/criarTronco.js';
 import { getMaterials } from './materials.js';
+import { criarCampoGrama } from './components/criarGrama.js';
 
 export function createEnvironment(scene) {
     // A névoa mistura o cenário distante com a cor do céu.
@@ -44,6 +45,7 @@ export function createEnvironment(scene) {
 
     const arvoresPorLado = 30;
     const pedrasPorLado = 20;
+    const gramasPorLado = 2000;
 
     for (const lado of [-1, 1]) {
         const posicoes = criarPosicoesDecoracao(lado);
@@ -62,6 +64,15 @@ export function createEnvironment(scene) {
             });
             scene.add(objeto);
         }
+
+        // Tufos fora das cercas, com margem para permanecerem sobre o chão.
+        const posicoesGrama = [];
+        for (let i = 0; i < gramasPorLado; i++) {
+            const x = lado * (6.2 + Math.random() * 52.8);
+            const z = -159 + Math.random() * 218;
+            posicoesGrama.push({ x, z });
+        }
+        scene.add(criarCampoGrama(posicoesGrama));
     }
 
     const posicoesCaixas = [

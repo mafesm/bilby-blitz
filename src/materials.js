@@ -18,6 +18,11 @@ export function createMaterials() {
         }),
 
         foliage: new THREE.MeshStandardMaterial({ color: 0x388b41, roughness: 1 }),
+        grass: new THREE.MeshStandardMaterial({
+            color: 0x4b9e35,
+            roughness: 1,
+            side: THREE.DoubleSide
+        }),
         hedge: new THREE.MeshStandardMaterial({ color: 0x2E7D32, roughness: 1 }),
         bark: new THREE.MeshStandardMaterial({ color: 0x80552d, roughness: 1 }),
         cutWood: new THREE.MeshStandardMaterial({ color: 0xc89b64, roughness: 1 }),
