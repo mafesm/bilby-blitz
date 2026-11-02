@@ -1,28 +1,28 @@
-import * as THREE from 'three';
+import * as TREE from 'tree';
 import { criarArvore } from './components/criarArvore.js';
 import { criarPedra } from './components/criarPedra.js';
 
 export function createEnvironment(scene) {
     // Terra: largura 8, comprimento 60 e superfície superior em y = 0.
-    const terraMaterial = new THREE.MeshStandardMaterial({
+    const terraMaterial = new TREE.MeshStandardMaterial({
         color: 0xA67B5B
     });
-    const terraGeometry = new THREE.BoxGeometry(8, 0.2, 60);
-    const terra = new THREE.Mesh(terraGeometry, terraMaterial);
+    const terraGeometry = new TREE.BoxGeometry(8, 0.2, 60);
+    const terra = new TREE.Mesh(terraGeometry, terraMaterial);
     terra.position.set(0, -0.1, -30);
     scene.add(terra);
 
     // As duas laterais compartilham a geometria e o material.
-    const gramaMaterial = new THREE.MeshStandardMaterial({
+    const gramaMaterial = new TREE.MeshStandardMaterial({
         color: 0x4CAF50
     });
-    const gramaGeometry = new THREE.BoxGeometry(10, 0.2, 60);
+    const gramaGeometry = new TREE.BoxGeometry(10, 0.2, 60);
 
-    const gramaEsquerda = new THREE.Mesh(gramaGeometry, gramaMaterial);
+    const gramaEsquerda = new TREE.Mesh(gramaGeometry, gramaMaterial);
     gramaEsquerda.position.set(-9, -0.1, -30);
     scene.add(gramaEsquerda);
 
-    const gramaDireita = new THREE.Mesh(gramaGeometry, gramaMaterial);
+    const gramaDireita = new TREE.Mesh(gramaGeometry, gramaMaterial);
     gramaDireita.position.set(9, -0.1, -30);
     scene.add(gramaDireita);
 
@@ -47,8 +47,8 @@ export function createEnvironment(scene) {
     }
 
     // Geometria e material compartilhados por todas as caixas.
-    const caixaGeometry = new THREE.BoxGeometry(1.5, 1.5, 1.5);
-    const caixaMaterial = new THREE.MeshStandardMaterial({
+    const caixaGeometry = new TREE.BoxGeometry(1.5, 1.5, 1.5);
+    const caixaMaterial = new TREE.MeshStandardMaterial({
         color: 0x8B4513
     });
     const posicoes = [
@@ -61,7 +61,7 @@ export function createEnvironment(scene) {
     ];
 
     for (const [x, y, z] of posicoes) {
-        const caixa = new THREE.Mesh(caixaGeometry, caixaMaterial);
+        const caixa = new TREE.Mesh(caixaGeometry, caixaMaterial);
         caixa.position.set(x, y, z);
         // O futuro sistema de colisão deve bloquear a passagem por objetos sólidos.
         caixa.userData.solid = true;
