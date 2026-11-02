@@ -1,10 +1,15 @@
 import * as THREE from 'three';
+import { SCENE_BACKGROUND_COLOR } from './config.js';
 import { criarArvore } from './components/criarArvore.js';
 import { criarArvoreTresCones } from './components/criarArvoreTresCones.js';
 import { criarPedra } from './components/criarPedra.js';
 import { criarCaixa } from './components/criarCaixa.js';
 
 export function createEnvironment(scene) {
+    // A névoa mistura o cenário distante com a cor do céu.
+    // Começa a 20 unidades da câmera e fica completa a 55 unidades.
+    scene.fog = new THREE.Fog(SCENE_BACKGROUND_COLOR, 30, 65);
+
     const gramaMaterial = new THREE.MeshStandardMaterial({
         color: 0x4CAF50,
         roughness: 1
