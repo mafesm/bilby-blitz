@@ -1,70 +1,54 @@
-import * as TREE from 'tree';
-import { criarArvore } from './components/criarArvore.js';
-import { criarPedra } from './components/criarPedra.js';
+import * as THREE from 'three';
+
+const PLATFORM_WIDTH = 10;
 
 export function createEnvironment(scene) {
-    // Terra: largura 8, comprimento 60 e superfície superior em y = 0.
-    const terraMaterial = new TREE.MeshStandardMaterial({
-        color: 0xA67B5B
+    const phase = new THREE.Group();
+    const materials = {
+        ground: new THREE.MeshStandardMaterial({ color: 0x547b3d, roughness: 1 }),
+        platform: new THREE.MeshStandardMaterial({ color: 0x8c633e, roughness: 0.9 }),
+        edge: new THREE.MeshStandardMaterial({ color: 0x3f5d2f, roughness: 1 }),
+        obstacle: new THREE.MeshStandardMaterial({ color: 0xc45137, roughness: 0.75 }),
+        goal: new THREE.MeshStandardMaterial({ color: 0xf2c84b, emissive: 0x5b3b05 })
+    };
+
+    addBox(phase, [PLATFORM_WIDTH, 0.6, 18], [0, -0.3, -1], materials.ground);
+    addBox(phase, [PLATFORM_WIDTH, 0.6, 16], [0, -0.3, -18], materials.ground);
+    addBox(phase, [PLATFORM_WIDTH, 0.6, 16], [0, -0.3, -35], materials.ground);
+    addBox(phase, [PLATFORM_WIDTH, 0.6, 16], [0, -0.3, -52], materials.ground);
+    addBox(phase, [PLATFORM_WIDTH, 0.6, 16], [0, -0.3, -69], materials.ground);
+
+    [-10, -27, -44, -61, -78].forEach((z) => {
+        addBox(phase, [0.35, 1.2, 15.5], [-5.15, 0.3, z], materials.edge);
+        addBox(phase, [0.35, 1.2, 15.5], [5.15, 0.3, z], materials.edge);
     });
-    const terraGeometry = new TREE.BoxGeometry(8, 0.2, 60);
-    const terra = new TREE.Mesh(terraGeometry, terraMaterial);
-    terra.position.set(0, -0.1, -30);
-    scene.add(terra);
 
-    // As duas laterais compartilham a geometria e o material.
-    const gramaMaterial = new TREE.MeshStandardMaterial({
-        color: 0x4CAF50
+    addBox(phase, [2, 1.3, 2], [-2.7, 0.65, -12], materials.obstacle);
+    addBox(phase, [2, 1.3, 2], [2.7, 0.65, -24], materials.obstacle);
+    addBox(phase, [2, 1.3, 2], [-2.7, 0.65, -40], materials.obstacle);
+    addBox(phase, [2, 1.3, 2], [2.7, 0.65, -57], materials.obstacle);
+
+    [-17, -34, -51, -68].forEach((z) => {
+        addBox(phase, [3.2, 0.7, 3.2], [0, 0.35, z], materials.platform);
     });
-    const gramaGeometry = new TREE.BoxGeometry(10, 0.2, 60);
 
-    const gramaEsquerda = new TREE.Mesh(gramaGeometry, gramaMaterial);
-    gramaEsquerda.position.set(-9, -0.1, -30);
-    scene.add(gramaEsquerda);
+    const goal = new THREE.Mesh(
+        new THREE.TorusGeometry(1.3, 0.18, 12, 32),
+        materials.goal
+    );
+    goal.position.set(0, 2, -76);
+    goal.rotation.x = Math.PI / 2;
+    phase.add(goal);
 
-    const gramaDireita = new TREE.Mesh(gramaGeometry, gramaMaterial);
-    gramaDireita.position.set(9, -0.1, -30);
-    scene.add(gramaDireita);
+    scene.add(phase);
+    return phase;
+}
 
-    // Margem de 1.5 para manter as copas dentro da grama e fora do caminho.
-    const arvoresPorLado = 12;
-    for (const lado of [-1, 1]) {
-        for (let i = 0; i < arvoresPorLado; i++) {
-            const x = lado * (5.5 + Math.random() * 7);
-            const z = -(1.5 + Math.random() * 57);
-            scene.add(criarArvore(x, z));
-        }
-    }
-
-    // Menos pedras que árvores, com margem para ficarem dentro da grama.
-    const pedrasPorLado = 4;
-    for (const lado of [-1, 1]) {
-        for (let i = 0; i < pedrasPorLado; i++) {
-            const x = lado * (5.2 + Math.random() * 7.6);
-            const z = -(1.2 + Math.random() * 57.6);
-            scene.add(criarPedra(x, z));
-        }
-    }
-
-    // Geometria e material compartilhados por todas as caixas.
-    const caixaGeometry = new TREE.BoxGeometry(1.5, 1.5, 1.5);
-    const caixaMaterial = new TREE.MeshStandardMaterial({
-        color: 0x8B4513
-    });
-    const posicoes = [
-        [0, 0.75, -10],
-        [-2, 0.75, -18],
-        [2, 0.75, -26],
-        [-1.3, 0.75, -35],
-        [1.3, 0.75, -35],
-        [0, 0.75, -48]
-    ];
-
-    for (const [x, y, z] of posicoes) {
-        const caixa = new TREE.Mesh(caixaGeometry, caixaMaterial);
-        caixa.position.set(x, y, z);
-        // O futuro sistema de colisão deve bloquear a passagem por objetos sólidos.
-        caixa.userData.solid = true;
-        scene.add(caixa);
-    }
+function addBox(parent, size, position, material) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), material);
+    mesh.position.set(...position);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    parent.add(mesh);
+    return mesh;
 }

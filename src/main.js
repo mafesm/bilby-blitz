@@ -4,7 +4,7 @@ import { SceneBase } from './sceneBase.js';
 import { loadMascot } from './mascot.js';
 import { setupLights } from './lights.js';
 import { CameraControls } from './cameraControls.js';
-import { createEnvironment } from './environment.js';
+import { createEnvironment } from './environment-p5.js';
 import * as THREE from 'three';
 
 class Game {
