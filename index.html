@@ -1,33 +1,46 @@
 <!doctype html>
 <html lang="pt-BR">
 
-<style>
-  body {
-    margin: 0;
-    overflow: hidden;
-  }
-
-  canvas {
-    display: block;
-  }
-
-  /* Adicione estilos adicionais conforme necessário */
-</style>
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script type="importmap">
     { "imports": 
-      { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } 
+      {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
     }
   </script>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    #controls-help {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      padding: 8px 12px;
+      color: #fff;
+      background: rgb(0 0 0 / 55%);
+      border-radius: 4px;
+      font: 14px sans-serif;
+      pointer-events: none;
+    }
+  </style>
   <title>Bilby Blitz</title>
 </head>
 
 <body>
   <!-- Área reservada para a cena 3D e a interface do jogo. -->
   <main id="game"></main>
+  <div id="controls-help">G: câmera livre | WASD: voar | Q/E: descer/subir | Setas: olhar</div>
   <script type="module" src="./src/main.js"></script>
 </body>
 
