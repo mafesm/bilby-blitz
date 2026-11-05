@@ -4,6 +4,7 @@ import { SceneBase } from './sceneBase.js';
 import { loadMascot } from './mascot.js';
 import { setupLights } from './lights.js';
 import { CameraControls } from './cameraControls.js';
+import { Input } from './input.js';
 import { createEnvironment } from './environment-p5.js';
 import * as THREE from 'three';
 
@@ -26,14 +27,15 @@ class Game {
         this.scene = this.sceneBase.scene;
         this.camera = this.sceneBase.camera;
         this.renderer = this.sceneBase.renderer;
-        this.cameraControls = new CameraControls(this.camera);
+        this.input = new Input();
+        this.cameraControls = new CameraControls(this.camera, this.input);
 
         setupLights(this.scene);
         createEnvironment(this.scene);
         loadMascot(this.scene).then((mascot) => {
             this.cameraControls.setTarget(mascot);
         }).catch(() => {
-            this.cameraControls.dispose();
+            this.input.dispose();
         });
 
         // Cubo giratório para debug.
