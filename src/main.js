@@ -2,7 +2,7 @@
 
 import { SceneBase } from './sceneBase.js';
 import { loadMascot } from './mascot.js';
-import { setupLights } from './lights.js';
+import { setupLights, setupLightControls } from './lights.js';
 import { CameraControls } from './cameraControls.js';
 import { Input } from './input.js';
 import { createEnvironment } from './environment-p5.js';
@@ -30,7 +30,8 @@ class Game {
         this.input = new Input();
         this.cameraControls = new CameraControls(this.camera, this.input);
 
-        setupLights(this.scene);
+        const lights = setupLights(this.scene);
+        setupLightControls(lights);
         createEnvironment(this.scene);
         loadMascot(this.scene).then((mascot) => {
             this.cameraControls.setTarget(mascot);

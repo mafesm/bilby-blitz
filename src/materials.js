@@ -57,8 +57,9 @@ export function createMaterials() {
 }
 
 
+
 function createTextures() {
-    const size = 128;
+    const size = 256;
 
     const canvas = document.createElement('canvas');
     canvas.width = size;
@@ -66,26 +67,57 @@ function createTextures() {
 
     const ctx = canvas.getContext('2d');
 
-    // Textura de cor: simula veios de madeira
-    ctx.fillStyle = '#b98552';
+    ctx.fillStyle = '#ad794b';
     ctx.fillRect(0, 0, size, size);
 
-    for (let i = 0; i < 12; i++) {
-        ctx.fillStyle = i % 2 === 0 ? '#936037' : '#d09b68';
-        ctx.fillRect(0, i * 11, size, 4);
+    const plankHeight = 64;
+    const colors = ['#b58250', '#ad794b', '#b98655', '#b17d4e'];
+
+    for (let p = 0; p < 4; p++) {
+        const y = p * plankHeight;
+
+        ctx.fillStyle = colors[p];
+        ctx.fillRect(0, y, size, plankHeight);
+
+        // Separação entre tábuas
+        ctx.fillStyle = '#623c23';
+        ctx.fillRect(0, y, size, 2);
+
+        // Veios da madeira
+        for (let i = 0; i < 5; i++) {
+            const veinY = y + 8 + Math.random() * 48;
+            const startX = Math.random() * 40;
+
+            ctx.beginPath();
+            ctx.moveTo(startX, veinY);
+            ctx.bezierCurveTo(
+                80, veinY - 3,
+                170, veinY + 3,
+                size, veinY
+            );
+
+            ctx.strokeStyle = 'rgba(90, 55, 30, 0.12)';
+            ctx.lineWidth = 1 + Math.random();
+            ctx.stroke();
+        }
     }
 
     const map = new THREE.CanvasTexture(canvas);
     map.colorSpace = THREE.SRGBColorSpace;
 
-    // Normal map neutro: sem relevo adicional
     const normalData = new Uint8Array(size * size * 4);
 
-    for (let i = 0; i < normalData.length; i += 4) {
-        normalData[i] = 128;
-        normalData[i + 1] = 128;
-        normalData[i + 2] = 255;
-        normalData[i + 3] = 255;
+    for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+            const i = (y * size + x) * 4;
+
+            const variation = Math.sin(y * 0.3 + Math.sin(x * 0.05)) * 15;
+
+            normalData[i] = 128;
+            normalData[i + 1] = 128 + variation;
+            normalData[i + 2] = 255;
+            normalData[i + 3] = 255;
+        }
     }
 
     const normalMap = new THREE.DataTexture(
@@ -93,18 +125,20 @@ function createTextures() {
     );
     normalMap.needsUpdate = true;
 
-    // Roughness map: regiões com rugosidade diferente
     const roughnessData = new Uint8Array(size * size * 4);
 
-    for (let i = 0; i < roughnessData.length; i += 4) {
-        const pixel = i / 4;
-        const y = Math.floor(pixel / size);
-        const value = y % 16 < 8 ? 220 : 150;
+    for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+            const i = (y * size + x) * 4;
 
-        roughnessData[i] = value;
-        roughnessData[i + 1] = value;
-        roughnessData[i + 2] = value;
-        roughnessData[i + 3] = 255;
+            const variation = Math.sin(y * 0.2 + x * 0.03) * 15;
+            const value = 210 + variation;
+
+            roughnessData[i] = value;
+            roughnessData[i + 1] = value;
+            roughnessData[i + 2] = value;
+            roughnessData[i + 3] = 255;
+        }
     }
 
     const roughnessMap = new THREE.DataTexture(
@@ -114,4 +148,5 @@ function createTextures() {
 
     return { map, normalMap, roughnessMap };
 }
+
 
