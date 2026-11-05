@@ -32,3 +32,23 @@ export function setupLights(scene) {
         spotLight
     };
 }
+
+export function setupLightControls(lights) {
+    window.addEventListener('keydown', (event) => {
+        const keys = {
+            '1': lights.ambientLight,
+            '2': lights.directionalLight,
+            '3': lights.pointLight,
+            '4': lights.spotLight
+        };
+
+        const light = keys[event.key];
+
+        if (light && !event.repeat) {
+            light.visible = !light.visible;
+            console.log(
+                `Luz ${event.key}: ${light.visible ? 'ligada' : 'desligada'}`
+            );
+        }
+    });
+}
