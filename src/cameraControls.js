@@ -2,46 +2,35 @@ import * as THREE from 'three';
 
 const MOVE_SPEED = 10;
 const VERTICAL_SPEED = 8;
+const JUMP_FORCE = 8;
+const GRAVITY = 20;
 const ROTATION_SPEED = 1.5;
 const WORLD_LIMIT_X = 4.3;
 const WORLD_MIN_Z = -78;
 const WORLD_MAX_Z = 2;
 
 export class CameraControls {
-    constructor(camera, domElement = document) {
+    constructor(camera, input) {
         this.camera = camera;
+        this.input = input;
         this.target = null;
         this.savedTarget = null; // Guarda a referência do personagem para reconexão
-        this.keys = new Set();
+        this.velocityY = 0;
+        this.onGround = true;
         this.forward = new THREE.Vector3();
         this.right = new THREE.Vector3();
         this.movement = new THREE.Vector3();
         this.flyDirection = new THREE.Vector3();
         this.rotation = camera.rotation.clone();
         this.cameraOffset = new THREE.Vector3(0, 3.2, 6);
-
-        this.onKeyDown = (event) => {
-            // Tecla G alterna o vínculo da câmera
-            if (event.code === 'KeyG' && !event.repeat) {
-                this.toggleTarget();
-            }
-
-            if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) {
-                event.preventDefault();
-                this.keys.add(event.code);
-            }
-        };
-        this.onKeyUp = (event) => this.keys.delete(event.code);
-        this.onBlur = () => this.keys.clear();
-
-        domElement.addEventListener('keydown', this.onKeyDown);
-        domElement.addEventListener('keyup', this.onKeyUp);
-        window.addEventListener('blur', this.onBlur);
-        document.body.tabIndex = 0;
-        document.body.focus();
     }
 
     setTarget(target) {
+        if (this.savedTarget !== target) {
+            this.groundY = target.position.y;
+            this.velocityY = 0;
+            this.onGround = true;
+        }
         this.savedTarget = target;
         this.target = target;
         if (this.target) {
@@ -63,8 +52,13 @@ export class CameraControls {
     }
 
     update(deltaTime) {
+        if (this.input.isPressed('KeyG')) {
+            this.toggleTarget();
+        }
+
         if (this.target) {
             this.updateTarget(deltaTime);
+            this.input.endFrame();
             return;
         }
 
@@ -73,17 +67,17 @@ export class CameraControls {
         this.forward.normalize();
         this.right.set(1, 0, 0).applyEuler(this.rotation).normalize();
         this.movement.set(0, 0, 0);
-        if (this.keys.has('KeyW')) this.movement.add(this.forward);
-        if (this.keys.has('KeyS')) this.movement.sub(this.forward);
-        if (this.keys.has('KeyD')) this.movement.add(this.right);
-        if (this.keys.has('KeyA')) this.movement.sub(this.right);
-        if (this.keys.has('KeyE')) this.movement.y += VERTICAL_SPEED / MOVE_SPEED;
-        if (this.keys.has('KeyQ')) this.movement.y -= VERTICAL_SPEED / MOVE_SPEED;
+        if (this.input.isDown('KeyW')) this.movement.add(this.forward);
+        if (this.input.isDown('KeyS')) this.movement.sub(this.forward);
+        if (this.input.isDown('KeyD')) this.movement.add(this.right);
+        if (this.input.isDown('KeyA')) this.movement.sub(this.right);
+        if (this.input.isDown('KeyE')) this.movement.y += VERTICAL_SPEED / MOVE_SPEED;
+        if (this.input.isDown('KeyQ')) this.movement.y -= VERTICAL_SPEED / MOVE_SPEED;
 
-        if (this.keys.has('ArrowUp')) this.rotation.x -= ROTATION_SPEED * deltaTime;
-        if (this.keys.has('ArrowDown')) this.rotation.x += ROTATION_SPEED * deltaTime;
-        if (this.keys.has('ArrowLeft')) this.rotation.y += ROTATION_SPEED * deltaTime;
-        if (this.keys.has('ArrowRight')) this.rotation.y -= ROTATION_SPEED * deltaTime;
+        if (this.input.isDown('ArrowUp')) this.rotation.x -= ROTATION_SPEED * deltaTime;
+        if (this.input.isDown('ArrowDown')) this.rotation.x += ROTATION_SPEED * deltaTime;
+        if (this.input.isDown('ArrowLeft')) this.rotation.y += ROTATION_SPEED * deltaTime;
+        if (this.input.isDown('ArrowRight')) this.rotation.y -= ROTATION_SPEED * deltaTime;
 
         this.rotation.x = THREE.MathUtils.clamp(this.rotation.x, -Math.PI / 2.2, Math.PI / 2.2);
         this.camera.rotation.copy(this.rotation);
@@ -92,14 +86,28 @@ export class CameraControls {
             this.flyDirection.copy(this.movement).normalize();
             this.camera.position.addScaledVector(this.flyDirection, MOVE_SPEED * deltaTime);
         }
+        this.input.endFrame();
     }
 
     updateTarget(deltaTime) {
+        if (this.input.isPressed('Space') && this.onGround) {
+            this.velocityY = JUMP_FORCE;
+            this.onGround = false;
+        }
+
+        this.velocityY -= GRAVITY * deltaTime;
+        this.target.position.y += this.velocityY * deltaTime;
+        if (this.target.position.y <= this.groundY) {
+            this.target.position.y = this.groundY;
+            this.velocityY = 0;
+            this.onGround = true;
+        }
+
         this.movement.set(0, 0, 0);
-        if (this.keys.has('KeyW') || this.keys.has('ArrowUp')) this.movement.z -= 1;
-        if (this.keys.has('KeyS') || this.keys.has('ArrowDown')) this.movement.z += 1;
-        if (this.keys.has('KeyD')) this.movement.x += 1;
-        if (this.keys.has('KeyA')) this.movement.x -= 1;
+        if (this.input.isDown('KeyW')) this.movement.z -= 1;
+        if (this.input.isDown('KeyS')) this.movement.z += 1;
+        if (this.input.isDown('KeyD')) this.movement.x += 1;
+        if (this.input.isDown('KeyA')) this.movement.x -= 1;
 
         if (this.movement.lengthSq() > 0) {
             this.movement.normalize().multiplyScalar(MOVE_SPEED * deltaTime);
@@ -113,9 +121,4 @@ export class CameraControls {
         this.camera.lookAt(this.target.position.x, this.target.position.y + 1.1, this.target.position.z);
     }
 
-    dispose() {
-        document.removeEventListener('keydown', this.onKeyDown);
-        document.removeEventListener('keyup', this.onKeyUp);
-        window.removeEventListener('blur', this.onBlur);
-    }
 }
