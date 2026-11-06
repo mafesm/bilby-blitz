@@ -13,3 +13,7 @@ export const SCENE_BACKGROUND_COLOR = 0x87ceeb;
 export const CAMERA_FOV = 60;
 export const CAMERA_NEAR = 0.1;
 export const CAMERA_FAR = 1000;
+
+// Meia-largura do personagem no plano XZ, usada pela colisão AABB.
+// Trata o Bilby como um quadrado de lado 2 * PLAYER_HALF_WIDTH visto de cima.
+export const PLAYER_HALF_WIDTH = 0.4;
