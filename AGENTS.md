@@ -86,8 +86,15 @@ bilby-blitz/
     geometria do cilindro.
   O `CameraControls` coleta os colisores em cache no construtor e expõe
   `rebuildColliders()` para refazê-los quando um sólido muda (ex.: caixa
-  destruída). A colisão só atua no modo 3ª pessoa (`updateTarget`), não na
-  câmera livre. O personagem usa meia-largura `PLAYER_HALF_WIDTH` (`config.js`).
+  destruída). A colisão lateral atua só no modo 3ª pessoa (`updateTarget`), não
+  na câmera livre. O personagem usa meia-largura `PLAYER_HALF_WIDTH` (`config.js`).
+- **Topo pisável (pousar em cima):** objetos marcados com
+  `userData.topWalkable = true` (hoje só as caixas) geram um colisor com o topo
+  (`topoY`). `alturaChaoEm()` usa isso como "chão elevado": o personagem pousa
+  em cima da caixa pulando. A referência é a altura dos pés do frame anterior
+  (evita atravessar o topo ao cair). Estando em cima, a caixa deixa de bloquear
+  lateralmente, então o personagem anda até a borda e cai (sem parede invisível).
+  Troncos e cercas NÃO são pisáveis — funcionam só como parede lateral.
 - **Sombras:** renderer com `shadowMap` (PCFSoft). Defina `castShadow` /
   `receiveShadow` em objetos novos conforme o caso.
 - **Materiais:** prefira reutilizar via `getMaterials()` (`materials.js`).

@@ -21,6 +21,8 @@ export function criarCaixa(x, y, z) {
     caixa.receiveShadow = true;
     // O sistema de colisão deverá usar esta flag para bloquear a passagem.
     caixa.userData.solid = true;
+    // O personagem pode pousar e ficar em cima da caixa (colisão de topo).
+    caixa.userData.topWalkable = true;
 
     // Madeira para as vigas
     const materialViga = new THREE.MeshStandardMaterial({

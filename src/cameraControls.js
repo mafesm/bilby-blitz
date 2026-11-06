@@ -1,10 +1,10 @@
 import * as THREE from 'three';
-import { coletarColisores, resolverMovimento } from './collision.js';
+import { coletarColisores, resolverMovimento, alturaChaoEm } from './collision.js';
 import { PLAYER_HALF_WIDTH } from './config.js';
 
 const MOVE_SPEED = 10;
 const VERTICAL_SPEED = 8;
-const JUMP_FORCE = 8;
+const JUMP_FORCE = 11;
 const GRAVITY = 20;
 const ROTATION_SPEED = 1.5;
 const WORLD_LIMIT_X = 4.3;
@@ -44,7 +44,12 @@ export class CameraControls {
 
     setTarget(target) {
         if (this.savedTarget !== target) {
-            this.groundY = target.position.y;
+            // Altura de repouso do mascote no chão. O modelo é normalizado em
+            // mascot.js para apoiar os pés em y = 0, mas por causa do pivô do
+            // FBX o `position.y` de repouso pode não ser 0. Guardamos esse valor
+            // como piso base e somamos aos topos dos colisores (que vêm em
+            // coordenadas de mundo), alinhando a física ao referencial do modelo.
+            this.chaoBaseY = target.position.y;
             this.velocityY = 0;
             this.onGround = true;
         }
@@ -112,12 +117,29 @@ export class CameraControls {
             this.onGround = false;
         }
 
+        const pos = this.target.position;
+
+        // Altura dos pés antes de aplicar a gravidade: referência para saber de
+        // qual topo o personagem "vinha de cima" (evita atravessar ao cair).
+        const pesYAnterior = pos.y;
+
         this.velocityY -= GRAVITY * deltaTime;
-        this.target.position.y += this.velocityY * deltaTime;
-        if (this.target.position.y <= this.groundY) {
-            this.target.position.y = this.groundY;
+        pos.y += this.velocityY * deltaTime;
+
+        // Chão efetivo: topo da caixa sob o personagem (se ele vinha de cima)
+        // ou o piso base (chaoBaseY). Os topos dos colisores vêm em coordenadas
+        // de mundo e são deslocados por chaoBaseY para o referencial do modelo.
+        // Ao sair da borda da caixa, volta ao piso e o personagem cai.
+        const chao = alturaChaoEm(
+            pos.x, pos.z, PLAYER_HALF_WIDTH, pesYAnterior,
+            this.colisores, this.chaoBaseY, this.chaoBaseY
+        );
+        if (pos.y <= chao) {
+            pos.y = chao;
             this.velocityY = 0;
             this.onGround = true;
+        } else {
+            this.onGround = false;
         }
 
         this.movement.set(0, 0, 0);
@@ -134,12 +156,16 @@ export class CameraControls {
             desejada.x = THREE.MathUtils.clamp(desejada.x, -WORLD_LIMIT_X, WORLD_LIMIT_X);
             desejada.z = THREE.MathUtils.clamp(desejada.z, WORLD_MIN_Z, WORLD_MAX_Z);
 
-            // Resolve colisão horizontal (bloqueia e desliza por eixo).
+            // Colisão horizontal (bloqueia e desliza). Passa a altura dos pés
+            // em coordenadas de mundo (pos.y - chaoBaseY) para que caixas sob o
+            // personagem não o bloqueiem quando ele já está em cima delas
+            // (pode andar para fora da borda e cair).
             const resolvida = resolverMovimento(
                 this.target.position,
                 desejada,
                 this.colisores,
-                PLAYER_HALF_WIDTH
+                PLAYER_HALF_WIDTH,
+                pos.y - this.chaoBaseY
             );
             this.target.position.x = resolvida.x;
             this.target.position.z = resolvida.z;
