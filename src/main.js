@@ -28,11 +28,13 @@ class Game {
         this.camera = this.sceneBase.camera;
         this.renderer = this.sceneBase.renderer;
         this.input = new Input();
-        this.cameraControls = new CameraControls(this.camera, this.input);
 
         const lights = setupLights(this.scene);
         setupLightControls(lights);
         createEnvironment(this.scene);
+
+        // A câmera recebe a cena já populada para coletar os colisores sólidos.
+        this.cameraControls = new CameraControls(this.camera, this.input, this.scene);
         loadMascot(this.scene).then((mascot) => {
             this.cameraControls.setTarget(mascot);
         }).catch(() => {
