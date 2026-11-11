@@ -9,6 +9,7 @@ import { CameraControls } from './cameraControls.js';
 import { Input } from './input.js';
 import { Combate } from './combat.js';
 import { createEnvironment } from './environment-p5.js';
+import { chegouAoFinal } from './fase.js';
 import * as THREE from 'three';
 
 class Game {
@@ -16,6 +17,7 @@ class Game {
         this.clock = new THREE.Clock();
         this.danoAcumulado = 0;
         this.pontos = 0;
+        this.faseConcluida = false;
         this.init();
     }
     animate() {
@@ -27,11 +29,24 @@ class Game {
         this.combate?.atualizar(deltaTime, atacar && this.cameraControls.target === this.mascote);
         if (this.cobra && this.mascote) this.cobra.atualizar(deltaTime, this.mascote);
         this.atualizarMascara?.(deltaTime);
+        if (this.mascote && !this.faseConcluida && chegouAoFinal(this.mascote.position.x, this.mascote.position.z)) {
+            this.faseConcluida = true;
+            if (this.painelMensagem) this.painelMensagem.textContent = 'Fase concluída!';
+        }
         // this.debugCube.rotation.x += 0.01;
         // this.debugCube.rotation.y += 0.01;
         this.renderer.render(this.scene, this.camera);
 
     }
+    alterarPontos(pontos) {
+        this.pontos += pontos;
+        if (this.mascote) {
+            this.mascote.userData.pontos = this.pontos;
+            this.mascote.dispatchEvent({ type: 'pontos', pontos, total: this.pontos });
+        }
+        if (this.painelPontos) this.painelPontos.textContent = `Pontos: ${this.pontos}`;
+    }
+
     init() {
         // Inicializar a cena, a câmera e o renderizador.
         this.sceneBase = new SceneBase();
@@ -40,6 +55,11 @@ class Game {
         this.renderer = this.sceneBase.renderer;
         this.input = new Input();
         this.painelPontos = document.getElementById('score');
+        this.painelMensagem = document.getElementById('phase-message');
+        this.scene.addEventListener('queda', ({ penalidade }) => {
+            this.alterarPontos(-penalidade);
+            if (this.painelMensagem) this.painelMensagem.textContent = `Queda: -${penalidade} pontos. Tente novamente!`;
+        });
 
         const lights = setupLights(this.scene);
         setupLightControls(lights);
@@ -51,12 +71,7 @@ class Game {
             this.mascote = mascot;
             this.cameraControls.setTarget(mascot);
             this.combate = new Combate(this.scene, mascot, {
-                aoPontuar: (pontos) => {
-                    this.pontos += pontos;
-                    mascot.userData.pontos = this.pontos;
-                    if (this.painelPontos) this.painelPontos.textContent = `Pontos: ${this.pontos}`;
-                    mascot.dispatchEvent({ type: 'pontos', pontos, total: this.pontos });
-                },
+                aoPontuar: (pontos) => this.alterarPontos(pontos),
                 aoAlterarColisores: () => {
                     this.cameraControls.rebuildColliders();
                     this.cobra?.atualizarColisores(this.scene);

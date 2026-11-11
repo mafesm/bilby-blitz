@@ -27,3 +27,6 @@ export const ALCANCE_GOLPE = 1.6;
 export const INTERVALO_GOLPE = 0.45;
 export const PONTOS_CAIXA = 100;
 export const PONTOS_COBRA = 200;
+
+export const PENALIDADE_QUEDA = 100;
+export const ALTURA_RETORNO_QUEDA = -3;

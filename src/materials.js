@@ -45,6 +45,8 @@ export function createMaterials() {
             metalness: 0.0
         }),
 
+        earth: new THREE.MeshStandardMaterial({ color: 0x79553b, roughness: 1 }),
+
         // Material para elementos metálicos
         metal: new THREE.MeshStandardMaterial({
             color: 0xb0b0b0,

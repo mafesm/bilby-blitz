@@ -1,15 +1,13 @@
 import * as THREE from 'three';
 import { coletarColisores, resolverMovimento, alturaChaoEm } from './collision.js';
-import { PLAYER_HALF_WIDTH } from './config.js';
+import { PLAYER_HALF_WIDTH, GROUND_Y, PENALIDADE_QUEDA, ALTURA_RETORNO_QUEDA } from './config.js';
+import { alturaPisoEm, pisoSeguroEm, resolverLimitesPercurso } from './fase.js';
 
 const MOVE_SPEED = 10;
 const VERTICAL_SPEED = 8;
 const JUMP_FORCE = 11;
 const GRAVITY = 20;
 const ROTATION_SPEED = 1.5;
-const WORLD_LIMIT_X = 4.3;
-const WORLD_MIN_Z = -78;
-const WORLD_MAX_Z = 2;
 
 export class CameraControls {
     constructor(camera, input, scene = null) {
@@ -26,6 +24,7 @@ export class CameraControls {
         this.flyDirection = new THREE.Vector3();
         this.rotation = camera.rotation.clone();
         this.cameraOffset = new THREE.Vector3(0, 3.2, 6);
+        this.ultimoPisoSeguro = new THREE.Vector3();
         // Colisores sólidos do cenário, coletados sob demanda e mantidos em cache.
         this.colisores = [];
         if (this.scene) {
@@ -52,6 +51,7 @@ export class CameraControls {
             this.chaoBaseY = target.position.y;
             this.velocityY = 0;
             this.onGround = true;
+            this.ultimoPisoSeguro.copy(target.position);
         }
         this.savedTarget = target;
         this.target = target;
@@ -117,31 +117,22 @@ export class CameraControls {
             this.onGround = false;
         }
 
+        // Passos pequenos evitam atravessar uma barreira ou pular um buraco
+        // inteiro quando um frame demora. O comportamento da câmera é mantido.
+        const tempo = Math.min(Math.max(deltaTime, 0), 0.1);
+        const passos = Math.max(1, Math.ceil(tempo / (1 / 120)));
+        for (let i = 0; i < passos; i++) this.simularPasso(tempo / passos);
+
+        const desiredPosition = this.target.position.clone().add(this.cameraOffset);
+        this.camera.position.lerp(desiredPosition, 1 - Math.pow(0.001, deltaTime));
+        this.camera.lookAt(this.target.position.x, this.target.position.y + 1.1, this.target.position.z);
+    }
+
+    simularPasso(deltaTime) {
         const pos = this.target.position;
-
-        // Altura dos pés antes de aplicar a gravidade: referência para saber de
-        // qual topo o personagem "vinha de cima" (evita atravessar ao cair).
         const pesYAnterior = pos.y;
-
         this.velocityY -= GRAVITY * deltaTime;
-        pos.y += this.velocityY * deltaTime;
-
-        // Chão efetivo: topo da caixa sob o personagem (se ele vinha de cima)
-        // ou o piso base (chaoBaseY). Os topos dos colisores vêm em coordenadas
-        // de mundo e são deslocados por chaoBaseY para o referencial do modelo.
-        // Ao sair da borda da caixa, volta ao piso e o personagem cai.
-        const chao = alturaChaoEm(
-            pos.x, pos.z, PLAYER_HALF_WIDTH, pesYAnterior,
-            this.colisores, this.chaoBaseY, this.chaoBaseY
-        );
-        if (pos.y <= chao) {
-            pos.y = chao;
-            this.velocityY = 0;
-            this.onGround = true;
-        } else {
-            this.onGround = false;
-        }
-
+        const proximaAltura = pos.y + this.velocityY * deltaTime;
         this.movement.set(0, 0, 0);
         if (this.input.isDown('KeyW')) this.movement.z -= 1;
         if (this.input.isDown('KeyS')) this.movement.z += 1;
@@ -151,29 +142,39 @@ export class CameraControls {
         if (this.movement.lengthSq() > 0) {
             this.movement.normalize().multiplyScalar(MOVE_SPEED * deltaTime);
 
-            // Posição pretendida antes de considerar colisões.
             const desejada = this.target.position.clone().add(this.movement);
-            desejada.x = THREE.MathUtils.clamp(desejada.x, -WORLD_LIMIT_X, WORLD_LIMIT_X);
-            desejada.z = THREE.MathUtils.clamp(desejada.z, WORLD_MIN_Z, WORLD_MAX_Z);
-
-            // Colisão horizontal (bloqueia e desliza). Passa a altura dos pés
-            // em coordenadas de mundo (pos.y - chaoBaseY) para que caixas sob o
-            // personagem não o bloqueiem quando ele já está em cima delas
-            // (pode andar para fora da borda e cair).
+            const dentroDoCaminho = resolverLimitesPercurso(pos, desejada, PLAYER_HALF_WIDTH);
             const resolvida = resolverMovimento(
-                this.target.position,
-                desejada,
-                this.colisores,
-                PLAYER_HALF_WIDTH,
-                pos.y - this.chaoBaseY
+                pos, dentroDoCaminho, this.colisores, PLAYER_HALF_WIDTH,
+                Math.max(pesYAnterior, proximaAltura) - this.chaoBaseY
             );
-            this.target.position.x = resolvida.x;
-            this.target.position.z = resolvida.z;
+            // Abaixo da borda do poço, não atravessa a parede para voltar ao piso.
+            if (pesYAnterior >= this.chaoBaseY - 0.05 ||
+                !Number.isFinite(alturaPisoEm(resolvida.x, resolvida.z, PLAYER_HALF_WIDTH))) {
+                pos.x = resolvida.x;
+                pos.z = resolvida.z;
+            }
         }
 
-        const desiredPosition = this.target.position.clone().add(this.cameraOffset);
-        this.camera.position.lerp(desiredPosition, 1 - Math.pow(0.001, deltaTime));
-        this.camera.lookAt(this.target.position.x, this.target.position.y + 1.1, this.target.position.z);
+        pos.y = proximaAltura;
+        const piso = alturaPisoEm(pos.x, pos.z, PLAYER_HALF_WIDTH) + this.chaoBaseY;
+        const chao = alturaChaoEm(pos.x, pos.z, PLAYER_HALF_WIDTH, pesYAnterior,
+            this.colisores, piso, this.chaoBaseY);
+        this.onGround = this.velocityY <= 0 && pos.y <= chao && pesYAnterior >= chao - 0.05;
+        if (this.onGround) {
+            pos.y = chao;
+            this.velocityY = 0;
+            if (Math.abs(pos.y - this.chaoBaseY - GROUND_Y) < 0.01 && pisoSeguroEm(pos.x, pos.z)) {
+                this.ultimoPisoSeguro.copy(pos);
+            }
+        }
+
+        if (pos.y - this.chaoBaseY < ALTURA_RETORNO_QUEDA) {
+            pos.copy(this.ultimoPisoSeguro);
+            this.velocityY = 0;
+            this.onGround = true;
+            this.scene?.dispatchEvent({ type: 'queda', penalidade: PENALIDADE_QUEDA });
+        }
     }
 
 }
