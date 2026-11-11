@@ -17,3 +17,7 @@ export const CAMERA_FAR = 1000;
 // Meia-largura do personagem no plano XZ, usada pela colisão AABB.
 // Trata o Bilby como um quadrado de lado 2 * PLAYER_HALF_WIDTH visto de cima.
 export const PLAYER_HALF_WIDTH = 0.4;
+
+// Dano por contato com a cobra e intervalo entre aplicações, em segundos.
+export const DANO_COBRA = 10;
+export const INTERVALO_DANO_COBRA = 1;

@@ -3,6 +3,7 @@
 import { SceneBase } from './sceneBase.js';
 import { loadMascot } from './mascot.js';
 import { loadMask, acompanharPersonagem } from './mask.js';
+import { loadSnake } from './snake.js';
 import { setupLights, setupLightControls } from './lights.js';
 import { CameraControls } from './cameraControls.js';
 import { Input } from './input.js';
@@ -12,12 +13,14 @@ import * as THREE from 'three';
 class Game {
     constructor() {
         this.clock = new THREE.Clock();
+        this.danoAcumulado = 0;
         this.init();
     }
     animate() {
         requestAnimationFrame(this.animate.bind(this)); // Chamar a função animate novamente para criar um loop de animação.
         const deltaTime = this.clock.getDelta();
         this.cameraControls.update(deltaTime);
+        if (this.cobra && this.mascote) this.cobra.atualizar(deltaTime, this.mascote);
         this.atualizarMascara?.(deltaTime);
         // this.debugCube.rotation.x += 0.01;
         // this.debugCube.rotation.y += 0.01;
@@ -39,7 +42,19 @@ class Game {
         // A câmera recebe a cena já populada para coletar os colisores sólidos.
         this.cameraControls = new CameraControls(this.camera, this.input, this.scene);
         loadMascot(this.scene).then((mascot) => {
+            this.mascote = mascot;
             this.cameraControls.setTarget(mascot);
+            loadSnake(this.scene, (dano) => {
+                this.danoAcumulado += dano;
+                mascot.userData.danoAcumulado = this.danoAcumulado;
+                mascot.dispatchEvent({ type: 'dano', dano, total: this.danoAcumulado });
+                console.info(`[dano] Cobra: +${dano}. Total: ${this.danoAcumulado}.`);
+            }).then((cobra) => {
+                this.cobra = cobra;
+                this.cameraControls.rebuildColliders();
+            }).catch((erro) => {
+                console.error('Não foi possível carregar a cobra.', erro);
+            });
             loadMask(this.scene).then((mascara) => {
                 this.atualizarMascara = acompanharPersonagem(mascara, mascot, this.scene);
             }).catch((erro) => {

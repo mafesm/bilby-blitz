@@ -25,9 +25,9 @@ export function coletarColisores(scene) {
             return;
         }
 
-        const colisor = obj.userData.colliderShape === 'capsule'
+        const colisor = obj.userData.colisorDinamico ?? (obj.userData.colliderShape === 'capsule'
             ? criarColisorCapsula(obj)
-            : criarColisorAABB(obj);
+            : criarColisorAABB(obj));
 
         if (colisor) {
             colisores.push(colisor);
@@ -158,6 +158,10 @@ const EPS_TOPO = 0.05;
 // da borda (e cair). Se `pesY` for nulo, bloqueia independentemente da altura.
 function colideComAlgum(x, z, halfWidth, colisores, pesY) {
     for (const colisor of colisores) {
+        // Inimigos móveis baixos podem ser ultrapassados durante um pulo.
+        if (pesY != null && colisor.maxY != null && pesY > colisor.maxY + EPS_TOPO) {
+            continue;
+        }
         if (
             pesY != null &&
             colisor.pisavel &&
