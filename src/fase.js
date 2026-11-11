@@ -12,8 +12,9 @@ export const ABERTURAS = [
     { minX: -5, maxX: 0.7, minZ: -61, maxZ: -57 },
     // Mantém a chegada em X = 19 e amplia o vão para trás, até X = 7.
     { minX: 7, maxX: 19, minZ: -80, maxZ: -70 },
-    { minX: 45, maxX: 49, minZ: -76, maxZ: -70 },
-    // Travessia final: somente os dois apoios verdes interrompem o vazio.
+    // Depois da parede: vão de 7 unidades e faixa direita de piso de 1 unidade.
+    { minX: 45, maxX: 52, minZ: -80, maxZ: -71 },
+    // Travessia final: apenas um apoio verde no centro do vão.
     { minX: 56, maxX: 76, minZ: -80, maxZ: -70 }
 ];
 

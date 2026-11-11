@@ -89,7 +89,9 @@ class Game {
             const posicoesCobras = [
                 { x: 0, z: -14 },
 
-                { x: 29, z: -74, eixo: 'z', limite: 1.2 }
+                { x: 29, z: -74, eixo: 'z', limite: 1.2 },
+                // Patrulha o piso entre o poço da parede e o poço do bloco verde.
+                { x: 54, z: -75, eixo: 'z', limite: 2.4 }
             ];
             for (const posicao of posicoesCobras) {
                 loadSnake(this.scene, receberDanoCobra, posicao).then((cobra) => {

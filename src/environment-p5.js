@@ -93,9 +93,8 @@ export function createEnvironment(scene) {
         }
     }
 
-    // Lateral esquerda de quem avança em +X: lado Z negativo do corredor.
-    fase.add(criarPlataformaVerde(61.5, GROUND_Y + 0.6, -78.2));
-    fase.add(criarPlataformaVerde(68.5, GROUND_Y + 0.6, -78.2));
+    // Um único apoio verde centralizado no poço de 20 unidades.
+    fase.add(criarPlataformaVerde(66, GROUND_Y + 0.6, -75));
     fase.add(criarBandeira(POSICAO_BANDEIRA.x, POSICAO_BANDEIRA.z));
 
     adicionarDecoracao(fase);
