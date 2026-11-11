@@ -15,6 +15,8 @@ export function criarTronco(x, z, angulo = Math.PI / 8) {
     tronco.castShadow = true;
     tronco.receiveShadow = true;
     tronco.userData.solid = true;
+    // Permite pousar no tronco e saltar por cima dele.
+    tronco.userData.topWalkable = true;
     // Visto de cima o tronco é um retângulo inclinado; a colisão o trata como
     // uma cápsula no plano XZ (segmento + raio) em vez de uma AABB folgada.
     tronco.userData.colliderShape = 'capsule';

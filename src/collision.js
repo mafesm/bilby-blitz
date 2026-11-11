@@ -88,7 +88,7 @@ function criarColisorCapsula(obj) {
     const escala = obj.getWorldScale(new THREE.Vector3());
     const raioMundo = raio * ((escala.x + escala.z) / 2);
 
-    return {
+    const colisor = {
         tipo: 'capsula',
         // Segmento projetado no plano XZ (ignora a altura Y).
         ax: _pontoA.x,
@@ -97,6 +97,12 @@ function criarColisorCapsula(obj) {
         bz: _pontoB.z,
         raio: raioMundo,
     };
+    if (obj.userData.topWalkable === true) {
+        _box.setFromObject(obj);
+        colisor.pisavel = true;
+        colisor.topoY = _box.max.y;
+    }
+    return colisor;
 }
 
 // Testa o quadrado do personagem (meia-largura `halfWidth`, centro em (x, z))
@@ -176,15 +182,10 @@ function colideComAlgum(x, z, halfWidth, colisores, pesY) {
     return false;
 }
 
-// O personagem (quadrado de meia-largura `halfWidth`, centro em (x, z)) está
-// sobre a projeção XZ do colisor pisável?
+// Usa a forma do colisor também no pouso: troncos inclinados mantêm a
+// projeção em cápsula, sem criar plataformas nos cantos vazios de uma AABB.
 function sobreOTopo(x, z, halfWidth, colisor) {
-    return (
-        x + halfWidth > colisor.minX &&
-        x - halfWidth < colisor.maxX &&
-        z + halfWidth > colisor.minZ &&
-        z - halfWidth < colisor.maxZ
-    );
+    return colideComColisor(x, z, halfWidth, colisor);
 }
 
 // Altura do "chão" sob o personagem em (x, z): o maior topo entre os colisores
