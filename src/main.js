@@ -39,12 +39,15 @@ class Game {
 
     }
     alterarPontos(pontos) {
-        this.pontos += pontos;
+        const pontosAnteriores = this.pontos;
+        this.pontos = Math.max(0, this.pontos + pontos);
+        const variacao = this.pontos - pontosAnteriores;
         if (this.mascote) {
             this.mascote.userData.pontos = this.pontos;
-            this.mascote.dispatchEvent({ type: 'pontos', pontos, total: this.pontos });
+            this.mascote.dispatchEvent({ type: 'pontos', pontos: variacao, total: this.pontos });
         }
         if (this.painelPontos) this.painelPontos.textContent = `Pontos: ${this.pontos}`;
+        return variacao;
     }
 
     init() {
@@ -57,8 +60,10 @@ class Game {
         this.painelPontos = document.getElementById('score');
         this.painelMensagem = document.getElementById('phase-message');
         this.scene.addEventListener('queda', ({ penalidade }) => {
-            this.alterarPontos(-penalidade);
-            if (this.painelMensagem) this.painelMensagem.textContent = `Queda: -${penalidade} pontos. Tente novamente!`;
+            const variacao = this.alterarPontos(-penalidade);
+            if (this.painelMensagem) this.painelMensagem.textContent = variacao < 0
+                ? `Queda: ${variacao} pontos. Tente novamente!`
+                : 'Queda: pontuação em 0. Tente novamente!';
         });
 
         const lights = setupLights(this.scene);

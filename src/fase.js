@@ -7,7 +7,8 @@ export const TRECHOS_PERCURSO = [
 ];
 
 export const ABERTURAS = [
-    { minX: -5, maxX: 5, minZ: -34, maxZ: -31 },
+    // Vão longo: a travessia exige saltar do topo da pilha de pedra na borda.
+    { minX: -5, maxX: 5, minZ: -46, maxZ: -34 },
     { minX: -5, maxX: 0.7, minZ: -61, maxZ: -57 },
     { minX: 16, maxX: 19, minZ: -80, maxZ: -70 },
     { minX: 45, maxX: 49, minZ: -76, maxZ: -70 },
@@ -16,6 +17,7 @@ export const ABERTURAS = [
 
 export const LIMITES_TERRENO = { minX: -60, maxX: 110, minZ: -130, maxZ: 60 };
 export const PROFUNDIDADE_POCO = 5.5;
+export const ESPESSURA_PISO = 0.6;
 
 export function dentroDoPercurso(x, z, margem = 0) {
     return [-margem, margem].every((dx) => [-margem, margem].every((dz) =>

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GROUND_Y, SCENE_BACKGROUND_COLOR } from './config.js';
-import { ABERTURAS, LIMITES_TERRENO, TRECHOS_PERCURSO, dentroDaAbertura } from './fase.js';
+import { ABERTURAS, LIMITES_TERRENO, TRECHOS_PERCURSO, ESPESSURA_PISO, dentroDaAbertura } from './fase.js';
 import { criarArvore } from './components/criarArvore.js';
 import { criarArvoreTresCones } from './components/criarArvoreTresCones.js';
 import { criarPedra } from './components/criarPedra.js';
@@ -38,8 +38,8 @@ export function createEnvironment(scene) {
             const x = (xs[i] + xs[i + 1]) / 2;
             const z = (zs[j] + zs[j + 1]) / 2;
             if (dentroDaAbertura(x, z)) continue;
-            fase.add(criarBloco(materiais.ground, xs[i + 1] - xs[i], 0.6,
-                zs[j + 1] - zs[j], x, GROUND_Y - 0.3, z));
+            fase.add(criarBloco(materiais.ground, xs[i + 1] - xs[i], ESPESSURA_PISO,
+                zs[j + 1] - zs[j], x, GROUND_Y - ESPESSURA_PISO / 2, z));
         }
     }
     for (const abertura of ABERTURAS) fase.add(criarPoco(abertura));
@@ -60,19 +60,20 @@ export function createEnvironment(scene) {
         fase.add(cerca);
     }
 
-    fase.add(criarTronco(-1.2, -40));
+    fase.add(criarTronco(-1.2, -54));
     fase.add(criarTronco(25, -75));
 
     // Madeira: caixas espalhadas e destrutíveis com X.
     const caixas = [
-        [0, -8], [-2, -20], [2, -20], [2.7, -44], [-2, -66],
+        [0, -8], [-2, -20], [2, -20], [2.7, -49], [-2, -66],
         [8, -76], [12, -72], [22, -72], [41, -78], [52, -74], [65, -77]
     ];
     for (const [x, z] of caixas) fase.add(criarCaixa(x, GROUND_Y + 0.75, z));
 
-    // Pedra: pilhas permanentes, sempre com uma rota livre ao lado.
+    // A primeira pilha é a base de lançamento para o vão de 12 unidades.
+    // As demais pilhas mantêm uma rota alternativa ao lado.
     const pilhas = [
-        [-2.5, -26, 2],
+        [-2.5, -31.6, 1], [-2.5, -33.25, 2],
         [-2, -51, 1], [0, -51, 2],
         [11, -78, 2], [11, -76.4, 1],
         [29, -76.5, 1], [33, -76.5, 2], [37, -76.5, 1],

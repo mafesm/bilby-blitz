@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { getMaterials } from '../materials.js';
 import { GROUND_Y } from '../config.js';
-import { PROFUNDIDADE_POCO } from '../fase.js';
+import { PROFUNDIDADE_POCO, ESPESSURA_PISO } from '../fase.js';
 
 const geometria = new THREE.BoxGeometry(1, 1, 1);
 
@@ -22,12 +22,13 @@ export function criarPoco(abertura) {
         poco.add(mesh);
     }
 
-    const centroY = GROUND_Y - PROFUNDIDADE_POCO / 2;
-    // Paredes fora da abertura: nenhuma tampa ou superfície cobre o buraco.
-    bloco(espessura, PROFUNDIDADE_POCO, comprimento, abertura.minX - espessura / 2, centroY, z, earth);
-    bloco(espessura, PROFUNDIDADE_POCO, comprimento, abertura.maxX + espessura / 2, centroY, z, earth);
-    bloco(largura, PROFUNDIDADE_POCO, espessura, x, centroY, abertura.minZ - espessura / 2, stone);
-    bloco(largura, PROFUNDIDADE_POCO, espessura, x, centroY, abertura.maxZ + espessura / 2, stone);
+    // As paredes começam sob a laje, sem faces coplanares com o piso verde.
+    const alturaParede = PROFUNDIDADE_POCO - ESPESSURA_PISO;
+    const centroY = GROUND_Y - ESPESSURA_PISO - alturaParede / 2;
+    bloco(espessura, alturaParede, comprimento, abertura.minX - espessura / 2, centroY, z, earth);
+    bloco(espessura, alturaParede, comprimento, abertura.maxX + espessura / 2, centroY, z, earth);
+    bloco(largura, alturaParede, espessura, x, centroY, abertura.minZ - espessura / 2, stone);
+    bloco(largura, alturaParede, espessura, x, centroY, abertura.maxZ + espessura / 2, stone);
     bloco(largura, 0.3, comprimento, x, GROUND_Y - PROFUNDIDADE_POCO - 0.15, z, stone);
     return poco;
 }
