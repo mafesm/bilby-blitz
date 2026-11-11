@@ -3,21 +3,24 @@ import { GROUND_Y, PLAYER_HALF_WIDTH } from './config.js';
 // O encontro dos dois retângulos forma uma curva contínua de 90 graus.
 export const TRECHOS_PERCURSO = [
     { minX: -5, maxX: 5, minZ: -80, maxZ: 4 },
-    { minX: -5, maxX: 75, minZ: -80, maxZ: -70 }
+    { minX: -5, maxX: 90, minZ: -80, maxZ: -70 }
 ];
 
 export const ABERTURAS = [
     // Vão longo: a travessia exige saltar do topo da pilha de pedra na borda.
     { minX: -5, maxX: 5, minZ: -46, maxZ: -34 },
     { minX: -5, maxX: 0.7, minZ: -61, maxZ: -57 },
-    { minX: 16, maxX: 19, minZ: -80, maxZ: -70 },
+    // Mantém a chegada em X = 19 e amplia o vão para trás, até X = 7.
+    { minX: 7, maxX: 19, minZ: -80, maxZ: -70 },
     { minX: 45, maxX: 49, minZ: -76, maxZ: -70 },
-    { minX: 57, maxX: 60.2, minZ: -80, maxZ: -70 }
+    // Travessia final: somente os dois apoios verdes interrompem o vazio.
+    { minX: 56, maxX: 76, minZ: -80, maxZ: -70 }
 ];
 
 export const LIMITES_TERRENO = { minX: -60, maxX: 110, minZ: -130, maxZ: 60 };
 export const PROFUNDIDADE_POCO = 5.5;
 export const ESPESSURA_PISO = 0.6;
+export const POSICAO_BANDEIRA = { x: 85, z: -75 };
 
 export function dentroDoPercurso(x, z, margem = 0) {
     return [-margem, margem].every((dx) => [-margem, margem].every((dz) =>
@@ -52,5 +55,5 @@ export function pisoSeguroEm(x, z, margem = 1) {
 }
 
 export function chegouAoFinal(x, z) {
-    return x >= 69 && z >= -79 && z <= -71;
+    return x >= POSICAO_BANDEIRA.x && z >= -79 && z <= -71;
 }

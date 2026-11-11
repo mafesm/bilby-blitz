@@ -11,20 +11,24 @@ const POSICAO_Z = -14;
 const AMPLITUDE_RASTEJAR = 0.1;
 const MARGEM_CONTATO = 0.12;
 
-export async function loadSnake(scene, aoReceberDano = () => {}) {
+export async function loadSnake(scene, aoReceberDano = () => {}, opcoes = {}) {
     const gltf = await new GLTFLoader().loadAsync(CAMINHO_MODELO);
-    const cobra = new Cobra(gltf.scene, scene, aoReceberDano);
+    const cobra = new Cobra(gltf.scene, scene, aoReceberDano, opcoes);
     scene.add(cobra.objeto);
     return cobra;
 }
 
 export class Cobra {
-    constructor(modelo, scene, aoReceberDano) {
+    constructor(modelo, scene, aoReceberDano, { x = 0, z = POSICAO_Z, eixo = 'x', limite = LIMITE_PATRULHA } = {}) {
         this.objeto = new THREE.Group();
         this.objeto.name = 'cobra-patrulha';
         this.modelo = modelo;
         this.aoReceberDano = aoReceberDano;
         this.direcao = 1;
+        this.eixo = eixo;
+        this.centroPatrulha = eixo === 'x' ? x : z;
+        this.limitePatrulha = limite;
+        this.rotacaoInicial = eixo === 'x' ? 0 : -Math.PI / 2;
         this.tempo = 0;
         this.esperaDano = 0;
         this.derrotada = false;
@@ -83,7 +87,8 @@ export class Cobra {
             centro.x * escala, limitesModelo.min.y * escala, centro.z * escala
         ));
         this.objeto.add(modelo);
-        this.objeto.position.set(0, GROUND_Y, POSICAO_Z);
+        this.objeto.position.set(x, GROUND_Y, z);
+        this.objeto.rotation.y = this.rotacaoInicial;
 
         this.colisor = { tipo: 'aabb' };
         this.objeto.userData.solid = true;
@@ -149,8 +154,9 @@ export class Cobra {
         this.limitesPersonagem.min.z = this.posicaoPersonagem.z - PLAYER_HALF_WIDTH;
         this.limitesPersonagem.max.z = this.posicaoPersonagem.z + PLAYER_HALF_WIDTH;
 
-        const passoX = this.direcao * VELOCIDADE_COBRA * passoTempo;
-        this.deslocamento.set(passoX, 0, 0);
+        const passo = this.direcao * VELOCIDADE_COBRA * passoTempo;
+        this.deslocamento.set(0, 0, 0);
+        this.deslocamento[this.eixo] = passo;
         this.proximosLimites.copy(this.limites).translate(this.deslocamento);
         const tocouPersonagem = this.limitesContato.copy(this.proximosLimites)
             .expandByScalar(MARGEM_CONTATO).intersectsBox(this.limitesPersonagem);
@@ -160,15 +166,15 @@ export class Cobra {
             this.proximosLimites.max.z > colisor.minZ && this.proximosLimites.min.z < colisor.maxZ
         ));
 
-        const aproximandoPersonagem = Math.abs(this.objeto.position.x + passoX - this.posicaoPersonagem.x) <=
-            Math.abs(this.objeto.position.x - this.posicaoPersonagem.x);
+        const aproximandoPersonagem = Math.abs(this.objeto.position[this.eixo] + passo - this.posicaoPersonagem[this.eixo]) <=
+            Math.abs(this.objeto.position[this.eixo] - this.posicaoPersonagem[this.eixo]);
         if ((tocouPersonagem && aproximandoPersonagem) || bloqueado ||
-            Math.abs(this.objeto.position.x + passoX) > LIMITE_PATRULHA) {
+            Math.abs(this.objeto.position[this.eixo] + passo - this.centroPatrulha) > this.limitePatrulha) {
             this.direcao *= -1;
         } else {
-            this.objeto.position.x += passoX;
+            this.objeto.position[this.eixo] += passo;
         }
-        this.objeto.rotation.y = this.direcao > 0 ? 0 : Math.PI;
+        this.objeto.rotation.y = this.rotacaoInicial + (this.direcao > 0 ? 0 : Math.PI);
         this.atualizarLimites();
 
         if (tocouPersonagem && this.esperaDano === 0) {

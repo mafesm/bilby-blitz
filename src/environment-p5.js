@@ -1,12 +1,14 @@
 import * as THREE from 'three';
 import { GROUND_Y, SCENE_BACKGROUND_COLOR } from './config.js';
-import { ABERTURAS, LIMITES_TERRENO, TRECHOS_PERCURSO, ESPESSURA_PISO, dentroDaAbertura } from './fase.js';
+import { ABERTURAS, LIMITES_TERRENO, TRECHOS_PERCURSO, ESPESSURA_PISO, POSICAO_BANDEIRA, dentroDaAbertura } from './fase.js';
 import { criarArvore } from './components/criarArvore.js';
 import { criarArvoreTresCones } from './components/criarArvoreTresCones.js';
 import { criarPedra } from './components/criarPedra.js';
 import { criarCaixa } from './components/criarCaixa.js';
 import { criarTronco } from './components/criarTronco.js';
 import { criarPlataformaPedra } from './components/criarPlataformaPedra.js';
+import { criarPlataformaVerde } from './components/criarPlataformaVerde.js';
+import { criarBandeira } from './components/criarBandeira.js';
 import { criarPoco } from './components/criarPoco.js';
 import { criarCampoGrama } from './components/criarGrama.js';
 import { getMaterials } from './materials.js';
@@ -48,10 +50,10 @@ export function createEnvironment(scene) {
     const barreiras = [
         [0.4, 84.8, -5.2, -38],
         [0.4, 74, 5.2, -33],
-        [80.8, 0.4, 35, -80.2],
-        [70.4, 0.4, 40.2, -69.8],
+        [95.8, 0.4, 42.5, -80.2],
+        [85.4, 0.4, 47.7, -69.8],
         [10.8, 0.4, 0, 4.2],
-        [0.4, 10.8, 75.2, -75]
+        [0.4, 10.8, 90.2, -75]
     ];
     for (const [largura, comprimento, x, z] of barreiras) {
         const cerca = criarBloco(materiais.hedge, largura, 1, comprimento, x, GROUND_Y + 0.5, z);
@@ -60,13 +62,13 @@ export function createEnvironment(scene) {
         fase.add(cerca);
     }
 
-    fase.add(criarTronco(-1.2, -54));
-    fase.add(criarTronco(25, -75));
+    fase.add(criarTronco(3, -58));
+    fase.add(criarTronco(22.5, -75));
 
     // Madeira: caixas espalhadas e destrutíveis com X.
     const caixas = [
         [0, -8], [-2, -20], [2, -20], [2.7, -49], [-2, -66],
-        [8, -76], [12, -72], [22, -72], [41, -78], [52, -74], [65, -77]
+        [22, -72], [41, -78]
     ];
     for (const [x, z] of caixas) fase.add(criarCaixa(x, GROUND_Y + 0.75, z));
 
@@ -75,23 +77,27 @@ export function createEnvironment(scene) {
     const pilhas = [
         [-2.5, -31.6, 1], [-2.5, -33.25, 2],
         [-2, -51, 1], [0, -51, 2],
-        [11, -78, 2], [11, -76.4, 1],
-        [29, -76.5, 1], [33, -76.5, 2], [37, -76.5, 1],
-        [52, -78, 1], [54, -78, 2], [63, -72, 1]
+        // Três blocos junto à borda do primeiro poço depois da curva.
+        [6.25, -78, 2], [6.25, -76.4, 1],
+        // Uma escadinha conduz à parede de quatro blocos de altura.
+        [38.85, -73.5, 1], [40.65, -73.5, 2],
+        [42.45, -73.5, 3]
     ];
+    // Preenche toda a largura do corredor com uma parede de quatro blocos.
+    for (let z = -79.5; z <= -70.5; z += 1.5) {
+        pilhas.push([44.25, z, 4]);
+    }
     for (const [x, z, quantidade] of pilhas) {
         for (let andar = 0; andar < quantidade; andar++) {
             fase.add(criarPlataformaPedra(x, GROUND_Y + 0.75 + andar * 1.5, z));
         }
     }
 
-    const chegada = new THREE.Mesh(
-        new THREE.TorusGeometry(1.5, 0.15, 10, 32),
-        new THREE.MeshStandardMaterial({ color: 0xffd54f, emissive: 0x664400 })
-    );
-    chegada.position.set(70, GROUND_Y + 1.7, -75);
-    chegada.rotation.y = Math.PI / 2;
-    fase.add(chegada);
+    // Lateral esquerda de quem avança em +X: lado Z negativo do corredor.
+    fase.add(criarPlataformaVerde(61.5, GROUND_Y + 0.6, -78.2));
+    fase.add(criarPlataformaVerde(68.5, GROUND_Y + 0.6, -78.2));
+    fase.add(criarBandeira(POSICAO_BANDEIRA.x, POSICAO_BANDEIRA.z));
+
     adicionarDecoracao(fase);
     scene.add(fase);
     return fase;

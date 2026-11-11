@@ -46,6 +46,10 @@ export function createMaterials() {
         }),
 
         earth: new THREE.MeshStandardMaterial({ color: 0x79553b, roughness: 1 }),
+        vinePlaceholder: new THREE.MeshStandardMaterial({ color: 0x36b84a, roughness: 1 }),
+        flagPlaceholder: new THREE.MeshStandardMaterial({
+            color: 0xf0f0f0, roughness: 1, side: THREE.DoubleSide
+        }),
 
         // Material para elementos metálicos
         metal: new THREE.MeshStandardMaterial({

@@ -18,6 +18,7 @@ class Game {
         this.danoAcumulado = 0;
         this.pontos = 0;
         this.faseConcluida = false;
+        this.cobras = [];
         this.init();
     }
     animate() {
@@ -27,7 +28,7 @@ class Game {
         const atacar = this.input.isPressed('KeyX');
         this.cameraControls.update(deltaTime);
         this.combate?.atualizar(deltaTime, atacar && this.cameraControls.target === this.mascote);
-        if (this.cobra && this.mascote) this.cobra.atualizar(deltaTime, this.mascote);
+        if (this.mascote) this.cobras.forEach((cobra) => cobra.atualizar(deltaTime, this.mascote));
         this.atualizarMascara?.(deltaTime);
         if (this.mascote && !this.faseConcluida && chegouAoFinal(this.mascote.position.x, this.mascote.position.z)) {
             this.faseConcluida = true;
@@ -60,10 +61,7 @@ class Game {
         this.painelPontos = document.getElementById('score');
         this.painelMensagem = document.getElementById('phase-message');
         this.scene.addEventListener('queda', ({ penalidade }) => {
-            const variacao = this.alterarPontos(-penalidade);
-            if (this.painelMensagem) this.painelMensagem.textContent = variacao < 0
-                ? `Queda: ${variacao} pontos. Tente novamente!`
-                : 'Queda: pontuação em 0. Tente novamente!';
+            this.alterarPontos(-penalidade);
         });
 
         const lights = setupLights(this.scene);
@@ -79,21 +77,30 @@ class Game {
                 aoPontuar: (pontos) => this.alterarPontos(pontos),
                 aoAlterarColisores: () => {
                     this.cameraControls.rebuildColliders();
-                    this.cobra?.atualizarColisores(this.scene);
+                    this.cobras.forEach((cobra) => cobra.atualizarColisores(this.scene));
                 }
             });
-            loadSnake(this.scene, (dano) => {
+            const receberDanoCobra = (dano) => {
                 this.danoAcumulado += dano;
                 mascot.userData.danoAcumulado = this.danoAcumulado;
                 mascot.dispatchEvent({ type: 'dano', dano, total: this.danoAcumulado });
                 console.info(`[dano] Cobra: +${dano}. Total: ${this.danoAcumulado}.`);
-            }).then((cobra) => {
-                this.cobra = cobra;
-                this.combate.adicionarAlvo(cobra.objeto, () => cobra.derrotar());
-                this.cameraControls.rebuildColliders();
-            }).catch((erro) => {
-                console.error('Não foi possível carregar a cobra.', erro);
-            });
+            };
+            const posicoesCobras = [
+                { x: 0, z: -14 },
+
+                { x: 29, z: -74, eixo: 'z', limite: 1.2 }
+            ];
+            for (const posicao of posicoesCobras) {
+                loadSnake(this.scene, receberDanoCobra, posicao).then((cobra) => {
+                    this.cobras.push(cobra);
+                    this.combate.adicionarAlvo(cobra.objeto, () => cobra.derrotar());
+                    this.cameraControls.rebuildColliders();
+                    this.cobras.forEach((outra) => outra.atualizarColisores(this.scene));
+                }).catch((erro) => {
+                    console.error('Não foi possível carregar uma cobra.', erro);
+                });
+            }
             loadMask(this.scene).then((mascara) => {
                 this.atualizarMascara = acompanharPersonagem(mascara, mascot, this.scene);
             }).catch((erro) => {
