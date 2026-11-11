@@ -21,3 +21,9 @@ export const PLAYER_HALF_WIDTH = 0.4;
 // Dano por contato com a cobra e intervalo entre aplicações, em segundos.
 export const DANO_COBRA = 10;
 export const INTERVALO_DANO_COBRA = 1;
+
+// Golpe em área ao pressionar X. Distância em unidades e tempos em segundos.
+export const ALCANCE_GOLPE = 1.6;
+export const INTERVALO_GOLPE = 0.45;
+export const PONTOS_CAIXA = 100;
+export const PONTOS_COBRA = 200;

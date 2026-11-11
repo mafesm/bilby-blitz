@@ -1,5 +1,5 @@
 const MOVEMENT_KEYS = new Set([
-    'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'Space',
+    'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'Space', 'KeyX',
     'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
 ]);
 

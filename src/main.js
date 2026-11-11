@@ -7,6 +7,7 @@ import { loadSnake } from './snake.js';
 import { setupLights, setupLightControls } from './lights.js';
 import { CameraControls } from './cameraControls.js';
 import { Input } from './input.js';
+import { Combate } from './combat.js';
 import { createEnvironment } from './environment-p5.js';
 import * as THREE from 'three';
 
@@ -14,12 +15,16 @@ class Game {
     constructor() {
         this.clock = new THREE.Clock();
         this.danoAcumulado = 0;
+        this.pontos = 0;
         this.init();
     }
     animate() {
         requestAnimationFrame(this.animate.bind(this)); // Chamar a função animate novamente para criar um loop de animação.
         const deltaTime = this.clock.getDelta();
+        // Os controles limpam pressedKeys; captura X antes de atualizá-los.
+        const atacar = this.input.isPressed('KeyX');
         this.cameraControls.update(deltaTime);
+        this.combate?.atualizar(deltaTime, atacar && this.cameraControls.target === this.mascote);
         if (this.cobra && this.mascote) this.cobra.atualizar(deltaTime, this.mascote);
         this.atualizarMascara?.(deltaTime);
         // this.debugCube.rotation.x += 0.01;
@@ -34,6 +39,7 @@ class Game {
         this.camera = this.sceneBase.camera;
         this.renderer = this.sceneBase.renderer;
         this.input = new Input();
+        this.painelPontos = document.getElementById('score');
 
         const lights = setupLights(this.scene);
         setupLightControls(lights);
@@ -44,6 +50,18 @@ class Game {
         loadMascot(this.scene).then((mascot) => {
             this.mascote = mascot;
             this.cameraControls.setTarget(mascot);
+            this.combate = new Combate(this.scene, mascot, {
+                aoPontuar: (pontos) => {
+                    this.pontos += pontos;
+                    mascot.userData.pontos = this.pontos;
+                    if (this.painelPontos) this.painelPontos.textContent = `Pontos: ${this.pontos}`;
+                    mascot.dispatchEvent({ type: 'pontos', pontos, total: this.pontos });
+                },
+                aoAlterarColisores: () => {
+                    this.cameraControls.rebuildColliders();
+                    this.cobra?.atualizarColisores(this.scene);
+                }
+            });
             loadSnake(this.scene, (dano) => {
                 this.danoAcumulado += dano;
                 mascot.userData.danoAcumulado = this.danoAcumulado;
@@ -51,6 +69,7 @@ class Game {
                 console.info(`[dano] Cobra: +${dano}. Total: ${this.danoAcumulado}.`);
             }).then((cobra) => {
                 this.cobra = cobra;
+                this.combate.adicionarAlvo(cobra.objeto, () => cobra.derrotar());
                 this.cameraControls.rebuildColliders();
             }).catch((erro) => {
                 console.error('Não foi possível carregar a cobra.', erro);

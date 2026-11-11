@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { coletarColisores } from './collision.js';
-import { DANO_COBRA, INTERVALO_DANO_COBRA, GROUND_Y, PLAYER_HALF_WIDTH } from './config.js';
+import { DANO_COBRA, INTERVALO_DANO_COBRA, GROUND_Y, PLAYER_HALF_WIDTH, PONTOS_COBRA } from './config.js';
 
 const CAMINHO_MODELO = new URL('./components/snake.glb', import.meta.url).href;
 const COMPRIMENTO_COBRA = 2.4;
@@ -27,6 +27,7 @@ export class Cobra {
         this.direcao = 1;
         this.tempo = 0;
         this.esperaDano = 0;
+        this.derrotada = false;
         this.partes = [];
         this.limites = new THREE.Box3();
         this.proximosLimites = new THREE.Box3();
@@ -86,6 +87,8 @@ export class Cobra {
 
         this.colisor = { tipo: 'aabb' };
         this.objeto.userData.solid = true;
+        this.objeto.userData.quebravel = true;
+        this.objeto.userData.pontos = PONTOS_COBRA;
         // O coletor reutiliza esta referência; os limites mudam a cada frame.
         this.objeto.userData.colisorDinamico = this.colisor;
         this.atualizarLimites();
@@ -108,7 +111,17 @@ export class Cobra {
         });
     }
 
+    derrotar() {
+        this.derrotada = true;
+        this.objeto.userData.solid = false;
+    }
+
+    atualizarColisores(scene) {
+        this.colisoresAmbiente = coletarColisores(scene).filter((colisor) => colisor !== this.colisor);
+    }
+
     atualizar(deltaTime, personagem) {
+        if (this.derrotada) return;
         if (this.personagem !== personagem) this.definirPersonagem(personagem);
         this.esperaDano = Math.max(0, this.esperaDano - deltaTime);
         // Limita o deslocamento após pausas para não saltar através do jogador.
