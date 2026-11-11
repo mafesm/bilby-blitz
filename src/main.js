@@ -2,6 +2,7 @@
 
 import { SceneBase } from './sceneBase.js';
 import { loadMascot } from './mascot.js';
+import { loadMask, acompanharPersonagem } from './mask.js';
 import { setupLights, setupLightControls } from './lights.js';
 import { CameraControls } from './cameraControls.js';
 import { Input } from './input.js';
@@ -15,7 +16,9 @@ class Game {
     }
     animate() {
         requestAnimationFrame(this.animate.bind(this)); // Chamar a função animate novamente para criar um loop de animação.
-        this.cameraControls.update(this.clock.getDelta());
+        const deltaTime = this.clock.getDelta();
+        this.cameraControls.update(deltaTime);
+        this.atualizarMascara?.(deltaTime);
         // this.debugCube.rotation.x += 0.01;
         // this.debugCube.rotation.y += 0.01;
         this.renderer.render(this.scene, this.camera);
@@ -37,6 +40,11 @@ class Game {
         this.cameraControls = new CameraControls(this.camera, this.input, this.scene);
         loadMascot(this.scene).then((mascot) => {
             this.cameraControls.setTarget(mascot);
+            loadMask(this.scene).then((mascara) => {
+                this.atualizarMascara = acompanharPersonagem(mascara, mascot, this.scene);
+            }).catch((erro) => {
+                console.error('Não foi possível adicionar a máscara companheira.', erro);
+            });
         }).catch(() => {
             this.input.dispose();
         });
