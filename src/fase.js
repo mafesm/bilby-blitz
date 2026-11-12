@@ -30,6 +30,17 @@ export function dentroDoPercurso(x, z, margem = 0) {
             z + dz >= trecho.minZ && z + dz <= trecho.maxZ)));
 }
 
+export function direcaoPercursoEm(x, z) {
+    const trechoVertical = TRECHOS_PERCURSO[0];
+    const trechoHorizontal = TRECHOS_PERCURSO[1];
+    if (z > trechoHorizontal.maxZ) return 0;
+    if (x >= trechoVertical.maxX) return -Math.PI / 2;
+
+    const centroX = (trechoVertical.minX + trechoVertical.maxX) / 2;
+    const progressoCurva = (x - centroX) / (trechoVertical.maxX - centroX);
+    return -Math.PI / 2 * Math.max(0, Math.min(1, progressoCurva));
+}
+
 export function resolverLimitesPercurso(atual, desejada, meiaLargura) {
     const x = dentroDoPercurso(desejada.x, atual.z, meiaLargura) ? desejada.x : atual.x;
     const z = dentroDoPercurso(x, desejada.z, meiaLargura) ? desejada.z : atual.z;

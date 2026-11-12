@@ -1,13 +1,21 @@
 import * as THREE from 'three';
 import { coletarColisores, resolverMovimento, alturaChaoEm } from './collision.js';
 import { PLAYER_HALF_WIDTH, GROUND_Y, PENALIDADE_QUEDA, ALTURA_RETORNO_QUEDA } from './config.js';
-import { alturaPisoEm, pisoSeguroEm, resolverLimitesPercurso } from './fase.js';
+import { alturaPisoEm, pisoSeguroEm, resolverLimitesPercurso, direcaoPercursoEm } from './fase.js';
 
 const MOVE_SPEED = 10;
 const VERTICAL_SPEED = 8;
 const JUMP_FORCE = 11;
 const GRAVITY = 20;
 const ROTATION_SPEED = 1.5;
+const PLAYER_TURN_SPEED = 10;
+const CAMERA_TURN_SPEED = 4;
+const EIXO_Y = new THREE.Vector3(0, 1, 0);
+
+function interpolarAngulo(atual, destino, fator) {
+    const diferenca = Math.atan2(Math.sin(destino - atual), Math.cos(destino - atual));
+    return atual + diferenca * fator;
+}
 
 export class CameraControls {
     constructor(camera, input, scene = null) {
@@ -24,6 +32,7 @@ export class CameraControls {
         this.flyDirection = new THREE.Vector3();
         this.rotation = camera.rotation.clone();
         this.cameraOffset = new THREE.Vector3(0, 3.2, 6);
+        this.cameraHeading = 0;
         this.ultimoPisoSeguro = new THREE.Vector3();
         // Colisores sólidos do cenário, coletados sob demanda e mantidos em cache.
         this.colisores = [];
@@ -56,7 +65,9 @@ export class CameraControls {
         this.savedTarget = target;
         this.target = target;
         if (this.target) {
-            this.camera.position.copy(target.position).add(this.cameraOffset);
+            this.cameraHeading = target.rotation.y;
+            const offset = this.cameraOffset.clone().applyAxisAngle(EIXO_Y, this.cameraHeading);
+            this.camera.position.copy(target.position).add(offset);
             this.camera.lookAt(target.position.x, target.position.y + 1.1, target.position.z);
         }
     }
@@ -123,7 +134,19 @@ export class CameraControls {
         const passos = Math.max(1, Math.ceil(tempo / (1 / 120)));
         for (let i = 0; i < passos; i++) this.simularPasso(tempo / passos);
 
-        const desiredPosition = this.target.position.clone().add(this.cameraOffset);
+        const direcaoPercurso = direcaoPercursoEm(this.target.position.x, this.target.position.z);
+        this.target.rotation.y = interpolarAngulo(
+            this.target.rotation.y,
+            direcaoPercurso,
+            1 - Math.exp(-PLAYER_TURN_SPEED * deltaTime)
+        );
+        this.cameraHeading = interpolarAngulo(
+            this.cameraHeading,
+            this.target.rotation.y,
+            1 - Math.exp(-CAMERA_TURN_SPEED * deltaTime)
+        );
+        const offset = this.cameraOffset.clone().applyAxisAngle(EIXO_Y, this.cameraHeading);
+        const desiredPosition = this.target.position.clone().add(offset);
         this.camera.position.lerp(desiredPosition, 1 - Math.pow(0.001, deltaTime));
         this.camera.lookAt(this.target.position.x, this.target.position.y + 1.1, this.target.position.z);
     }
@@ -140,6 +163,7 @@ export class CameraControls {
         if (this.input.isDown('KeyA')) this.movement.x -= 1;
 
         if (this.movement.lengthSq() > 0) {
+            this.movement.applyAxisAngle(EIXO_Y, this.target.rotation.y);
             this.movement.normalize().multiplyScalar(MOVE_SPEED * deltaTime);
 
             const desejada = this.target.position.clone().add(this.movement);
