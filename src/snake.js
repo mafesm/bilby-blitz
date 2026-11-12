@@ -31,6 +31,7 @@ export class Cobra {
         this.rotacaoInicial = eixo === 'x' ? 0 : -Math.PI / 2;
         this.tempo = 0;
         this.esperaDano = 0;
+        this.emContato = false;
         this.derrotada = false;
         this.partes = [];
         this.limites = new THREE.Box3();
@@ -141,8 +142,6 @@ export class Cobra {
                     Math.sin(x * 3.5 - this.tempo * 6) * AMPLITUDE_RASTEJAR);
             }
             posicoes.needsUpdate = true;
-            parte.geometry.computeBoundingBox();
-            parte.geometry.computeBoundingSphere();
         }
         this.atualizarLimites();
 
@@ -177,9 +176,11 @@ export class Cobra {
         this.objeto.rotation.y = this.rotacaoInicial + (this.direcao > 0 ? 0 : Math.PI);
         this.atualizarLimites();
 
-        if (tocouPersonagem && this.esperaDano === 0) {
+        // Um contato contínuo tira só uma vida; é preciso se afastar para outro golpe.
+        if (tocouPersonagem && !this.emContato && this.esperaDano === 0) {
             this.esperaDano = INTERVALO_DANO_COBRA;
             this.aoReceberDano(DANO_COBRA);
         }
+        this.emContato = tocouPersonagem;
     }
 }

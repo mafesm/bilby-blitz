@@ -10,12 +10,15 @@ import { Input } from './input.js';
 import { Combate } from './combat.js';
 import { createEnvironment } from './environment-p5.js';
 import { chegouAoFinal } from './fase.js';
+import { VIDAS_INICIAIS } from './config.js';
+import { Hud } from './hud.js';
 import * as THREE from 'three';
 
 class Game {
     constructor() {
         this.clock = new THREE.Clock();
-        this.danoAcumulado = 0;
+        this.vidas = VIDAS_INICIAIS;
+        this.estado = 'jogando';
         this.pontos = 0;
         this.faseConcluida = false;
         this.cobras = [];
@@ -24,11 +27,29 @@ class Game {
     animate() {
         requestAnimationFrame(this.animate.bind(this)); // Chamar a função animate novamente para criar um loop de animação.
         const deltaTime = this.clock.getDelta();
+        if (this.estado === 'gameOver') {
+            this.renderer.render(this.scene, this.camera);
+            return;
+        }
         // Os controles limpam pressedKeys; captura X antes de atualizá-los.
         const atacar = this.input.isPressed('KeyX');
         this.cameraControls.update(deltaTime);
+        // Uma queda pode encerrar a partida durante a atualização dos controles.
+        if (this.estado === 'gameOver') {
+            this.renderer.render(this.scene, this.camera);
+            return;
+        }
         this.combate?.atualizar(deltaTime, atacar && this.cameraControls.target === this.mascote);
-        if (this.mascote) this.cobras.forEach((cobra) => cobra.atualizar(deltaTime, this.mascote));
+        if (this.mascote) {
+            for (const cobra of this.cobras) {
+                cobra.atualizar(deltaTime, this.mascote);
+                if (this.estado === 'gameOver') break;
+            }
+        }
+        if (this.estado === 'gameOver') {
+            this.renderer.render(this.scene, this.camera);
+            return;
+        }
         this.atualizarMascara?.(deltaTime);
         if (this.mascote && !this.faseConcluida && chegouAoFinal(this.mascote.position.x, this.mascote.position.z)) {
             this.faseConcluida = true;
@@ -39,6 +60,21 @@ class Game {
         this.renderer.render(this.scene, this.camera);
 
     }
+    perderVida() {
+        if (this.estado !== 'jogando') return;
+        this.vidas = Math.max(0, this.vidas - 1);
+        this.hud.atualizarVidas(this.vidas);
+        if (this.vidas === 0) this.encerrarJogo();
+    }
+
+    encerrarJogo() {
+        if (this.estado === 'gameOver') return;
+        this.estado = 'gameOver';
+        this.input.dispose();
+        this.input.onBlur();
+        this.hud.mostrarFimDeJogo(this.pontos);
+    }
+
     alterarPontos(pontos) {
         const pontosAnteriores = this.pontos;
         this.pontos = Math.max(0, this.pontos + pontos);
@@ -58,10 +94,14 @@ class Game {
         this.camera = this.sceneBase.camera;
         this.renderer = this.sceneBase.renderer;
         this.input = new Input();
+        this.hud = new Hud();
+        this.hud.atualizarVidas(this.vidas);
         this.painelPontos = document.getElementById('score');
         this.painelMensagem = document.getElementById('phase-message');
         this.scene.addEventListener('queda', ({ penalidade }) => {
+            if (this.estado !== 'jogando') return;
             this.alterarPontos(-penalidade);
+            this.perderVida();
         });
 
         const lights = setupLights(this.scene);
@@ -80,11 +120,8 @@ class Game {
                     this.cobras.forEach((cobra) => cobra.atualizarColisores(this.scene));
                 }
             });
-            const receberDanoCobra = (dano) => {
-                this.danoAcumulado += dano;
-                mascot.userData.danoAcumulado = this.danoAcumulado;
-                mascot.dispatchEvent({ type: 'dano', dano, total: this.danoAcumulado });
-                console.info(`[dano] Cobra: +${dano}. Total: ${this.danoAcumulado}.`);
+            const receberDanoCobra = () => {
+                this.perderVida();
             };
             const posicoesCobras = [
                 { x: 0, z: -14 },

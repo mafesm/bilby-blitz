@@ -33,7 +33,7 @@ export class SceneBase {
     WebGLRenderer() {
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.renderer.setSize(window.innerWidth, window.innerHeight); // Ajustar o tamanho do renderizador para a janela.
-        this.renderer.setPixelRatio(window.devicePixelRatio); // Ajustar a razão de pixels para a densidade de pixels do dispositivo.
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Ajustar a razão de pixels para a densidade de pixels do dispositivo.
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
