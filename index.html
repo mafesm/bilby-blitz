@@ -22,7 +22,7 @@
       display: block;
     }
 
-    #controls-help {
+    #controls-help, #score, #phase-message {
       position: fixed;
       top: 16px;
       left: 16px;
@@ -33,6 +33,19 @@
       font: 14px sans-serif;
       pointer-events: none;
     }
+
+    #score {
+      left: auto;
+      right: 16px;
+    }
+
+    #phase-message {
+      top: 62px;
+    }
+
+    #phase-message:empty {
+      display: none;
+    }
   </style>
   <title>Bilby Blitz</title>
 </head>
@@ -40,7 +53,9 @@
 <body>
   <!-- Área reservada para a cena 3D e a interface do jogo. -->
   <main id="game"></main>
-  <div id="controls-help">G: câmera livre | Mascote: WASD + Espaço | Câmera livre: WASD, Q/E e setas</div>
+  <div id="controls-help">G: câmera livre | Mascote: WASD + Espaço | X: golpear | Câmera livre: WASD, Q/E e setas</div>
+  <div id="score" role="status" aria-live="polite">Pontos: 0</div>
+  <div id="phase-message" role="status" aria-live="polite"></div>
   <script type="module" src="./src/main.js"></script>
 </body>
 
