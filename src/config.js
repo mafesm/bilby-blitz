@@ -19,7 +19,8 @@ export const CAMERA_FAR = 1000;
 export const PLAYER_HALF_WIDTH = 0.4;
 
 // Dano por contato com a cobra e intervalo entre aplicações, em segundos.
-export const DANO_COBRA = 10;
+export const VIDAS_INICIAIS = 3;
+export const DANO_COBRA = 1;
 export const INTERVALO_DANO_COBRA = 1;
 
 // Golpe em área ao pressionar X. Distância em unidades e tempos em segundos.

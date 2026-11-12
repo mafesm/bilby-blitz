@@ -22,7 +22,7 @@
       display: block;
     }
 
-    #controls-help, #score, #phase-message {
+    #controls-help, #score, #phase-message, #lives {
       position: fixed;
       top: 16px;
       left: 16px;
@@ -46,6 +46,47 @@
     #phase-message:empty {
       display: none;
     }
+
+    #lives {
+      top: 62px;
+      left: auto;
+      right: 16px;
+    }
+
+    #game-over {
+      width: min(360px, calc(100vw - 64px));
+      box-sizing: border-box;
+      padding: 32px;
+      border: 2px solid #e9b44c;
+      border-radius: 16px;
+      color: #fff;
+      background: #182b24;
+      text-align: center;
+      font: 18px sans-serif;
+    }
+
+    #game-over::backdrop {
+      background: rgb(0 0 0 / 70%);
+    }
+
+    #game-over h1 {
+      margin-top: 0;
+    }
+
+    #restart {
+      padding: 12px 24px;
+      border: 0;
+      border-radius: 8px;
+      background: #e9b44c;
+      color: #182b24;
+      font: bold 16px sans-serif;
+      cursor: pointer;
+    }
+
+    #restart:focus-visible {
+      outline: 3px solid white;
+      outline-offset: 4px;
+    }
   </style>
   <title>Bilby Blitz</title>
 </head>
@@ -55,7 +96,13 @@
   <main id="game"></main>
   <div id="controls-help">G: câmera livre | Mascote: WASD + Espaço | X: golpear | Câmera livre: WASD, Q/E e setas</div>
   <div id="score" role="status" aria-live="polite">Pontos: 0</div>
+  <div id="lives" role="status" aria-live="polite"></div>
   <div id="phase-message" role="status" aria-live="polite"></div>
+  <dialog id="game-over" aria-labelledby="game-over-title" aria-describedby="final-score">
+    <h1 id="game-over-title">Fim de jogo</h1>
+    <p id="final-score"></p>
+    <button id="restart" type="button">Jogar novamente</button>
+  </dialog>
   <script type="module" src="./src/main.js"></script>
 </body>
 
