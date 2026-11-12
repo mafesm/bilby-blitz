@@ -2,12 +2,20 @@ import * as THREE from 'three';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
 const MASK_MODEL_PATH = './assets/models/mascara1.fbx';
+const MASK_TEXTURE_PATH = './assets/models/mascara1-paleta.png';
 const ALTURA_MASCARA = 0.8;
 const MARGEM_CAIXA = 0.2;
 const DISTANCIA_ANTECIPACAO = 1.2;
+const ALTURA_RELATIVA = 0.9;  // 0 = pés do personagem, 1 = topo da cabeça
+const FOLGA_LATERAL = 0.2;    // espaço entre a ponta do braço e a máscara, em metros
 
 export function loadMask(scene) {
     const loader = new FBXLoader();
+    const paleta = new THREE.TextureLoader().load(MASK_TEXTURE_PATH);
+    paleta.colorSpace = THREE.SRGBColorSpace;
+    paleta.magFilter = THREE.NearestFilter;
+    paleta.minFilter = THREE.NearestFilter;
+    paleta.generateMipmaps = false;
 
     return new Promise((resolve, reject) => loader.load(
         MASK_MODEL_PATH,
@@ -33,11 +41,19 @@ export function loadMask(scene) {
             function iluminarMaterial(material) {
                 if (materiaisIluminados.has(material)) return materiaisIluminados.get(material);
                 const copia = material.clone();
-                if (copia.emissive && copia.color) {
-                    copia.emissive.set(0xffffff);
+                copia.map = paleta;
+                copia.color?.set(0xffffff);
+                copia.specular?.set(0x111111);
+                copia.vertexColors = true;
+                if (copia.color) {
+                    copia.color.setHex(0xffffff);
+                }
+                if (copia.emissive) {
+                    copia.emissive.setHex(0xffffff);
                     copia.emissiveIntensity = 0.65;
                     copia.emissiveMap = copia.map;
                 }
+                copia.needsUpdate = true;
                 materiaisIluminados.set(material, copia);
                 return copia;
             }
@@ -86,7 +102,8 @@ export function acompanharPersonagem(mascara, personagem, scene) {
     const tamanhoMascara = new THREE.Box3().setFromObject(mascara).getSize(new THREE.Vector3());
     const meiaAltura = tamanhoMascara.y / 2;
     const raio = Math.hypot(tamanhoMascara.x, tamanhoMascara.z) / 2;
-    const distanciaLateral = tamanhoPersonagem.x / 2 + tamanhoMascara.x / 2 + 0.4;
+    const alturaPes = limitesPersonagem.min.y - origem.y;
+    const distanciaLateral = tamanhoPersonagem.x / 2 + tamanhoMascara.x / 2 + FOLGA_LATERAL;
     const caixas = [];
     scene.traverse((objeto) => {
         if (objeto.userData.solid && objeto.userData.topWalkable) caixas.push(objeto);
@@ -107,7 +124,7 @@ export function acompanharPersonagem(mascara, personagem, scene) {
         direita.normalize();
         desejada.copy(posicaoPersonagem).add(deslocamentoCentro)
             .addScaledVector(direita, distanciaLateral);
-        desejada.y += tamanhoPersonagem.y * 0.15;
+        desejada.y = posicaoPersonagem.y + alturaPes + tamanhoPersonagem.y * ALTURA_RELATIVA;
 
         const alturaNormal = desejada.y;
         let alturaSegura = -Infinity;
@@ -134,6 +151,7 @@ export function acompanharPersonagem(mascara, personagem, scene) {
             ? THREE.MathUtils.lerp(mascara.position.y, desejada.y, suavizacao)
             : desejada.y;
         mascara.position.set(desejada.x, Math.max(altura, alturaSegura), desejada.z);
+        mascara.rotation.y = personagem.rotation.y;
         mascara.visible = true;
         iniciou = true;
     }

@@ -77,7 +77,8 @@ export class CameraControls {
         if (this.target) {
             // Desconecta: a câmera passa a responder ao movimento livre (WASD / setas)
             this.target = null;
-            this.rotation.copy(this.camera.rotation);
+            this.rotation.setFromQuaternion(this.camera.quaternion, 'YXZ');
+            this.rotation.z = 0;
         } else if (this.savedTarget) {
             // Reconecta: volta a seguir o personagem
             this.setTarget(this.savedTarget);
