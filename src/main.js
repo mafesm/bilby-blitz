@@ -93,7 +93,9 @@ class Game {
         this.scene = this.sceneBase.scene;
         this.camera = this.sceneBase.camera;
         this.renderer = this.sceneBase.renderer;
-        this.input = new Input();
+        // A Input recebe o canvas do renderizador para capturar o mouse via
+        // Pointer Lock. Ordem obrigatória: SceneBase -> Input -> CameraControls.
+        this.input = new Input(this.renderer.domElement);
         this.hud = new Hud();
         this.hud.atualizarVidas(this.vidas);
         this.painelPontos = document.getElementById('score');

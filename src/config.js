@@ -31,3 +31,21 @@ export const PONTOS_COBRA = 200;
 
 export const PENALIDADE_QUEDA = 100;
 export const ALTURA_RETORNO_QUEDA = -3;
+
+// --- Câmera orbital em terceira pessoa controlada pelo mouse (Pointer Lock) ---
+
+// Sensibilidade do mouse: converte cada pixel de movimento (movementX/movementY)
+// em variação angular de yaw/pitch, em radianos por pixel. Deve ser > 0.
+export const SENSIBILIDADE_MOUSE = 0.0015;
+
+// Limite inferior do pitch (inclinação vertical) da câmera, em radianos.
+// Deve ser < 0 (olhar um pouco para baixo em relação ao personagem).
+export const LIMITE_PITCH_MINIMO = -Math.PI / 6;
+
+// Limite superior do pitch (inclinação vertical) da câmera, em radianos.
+// Deve ser > 0 (olhar para cima). Garante-se LIMITE_PITCH_MINIMO < 0 < LIMITE_PITCH_MAXIMO.
+export const LIMITE_PITCH_MAXIMO = Math.PI / 3;
+
+// Velocidade de rotação suave do personagem em direção ao movimento. Valor > 0
+// usado no fator de interpolação exponencial 1 - exp(-VELOCIDADE_ROTACAO_PERSONAGEM * dt).
+export const VELOCIDADE_ROTACAO_PERSONAGEM = 10;
