@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import { coletarColisores, resolverMovimento, alturaChaoEm } from './collision.js';
-import { PLAYER_HALF_WIDTH, GROUND_Y, PENALIDADE_QUEDA, ALTURA_RETORNO_QUEDA } from './config.js';
+import {
+    PLAYER_HALF_WIDTH, GROUND_Y, PENALIDADE_QUEDA, ALTURA_RETORNO_QUEDA,
+    SENSIBILIDADE_MOUSE, LIMITE_PITCH_MINIMO, LIMITE_PITCH_MAXIMO, VELOCIDADE_ROTACAO_PERSONAGEM
+} from './config.js';
 import { alturaPisoEm, pisoSeguroEm, resolverLimitesPercurso, direcaoPercursoEm } from './fase.js';
 
 const MOVE_SPEED = 10;
@@ -33,6 +36,16 @@ export class CameraControls {
         this.rotation = camera.rotation.clone();
         this.cameraOffset = new THREE.Vector3(0, 3.2, 6);
         this.cameraHeading = 0;
+        // Câmera orbital controlada pelo mouse: yaw (horizontal) e pitch
+        // (vertical). O raio da órbita é a distância constante do cameraOffset,
+        // preservando o enquadramento original (0, 3.2, 6).
+        this.raioOrbital = this.cameraOffset.length();
+        this.yaw = 0;
+        // Pitch padrão derivado do cameraOffset: asin(altura / raio) reproduz a
+        // inclinação suave para baixo do enquadramento original, já respeitando
+        // os limites verticais permitidos.
+        const pitchPadrao = Math.asin(this.cameraOffset.y / this.raioOrbital);
+        this.pitch = THREE.MathUtils.clamp(pitchPadrao, LIMITE_PITCH_MINIMO, LIMITE_PITCH_MAXIMO);
         this.ultimoPisoSeguro = new THREE.Vector3();
         // Colisores sólidos do cenário, coletados sob demanda e mantidos em cache.
         this.colisores = [];
@@ -65,11 +78,32 @@ export class CameraControls {
         this.savedTarget = target;
         this.target = target;
         if (this.target) {
-            this.cameraHeading = target.rotation.y;
-            const offset = this.cameraOffset.clone().applyAxisAngle(EIXO_Y, this.cameraHeading);
-            this.camera.position.copy(target.position).add(offset);
-            this.camera.lookAt(target.position.x, target.position.y + 1.1, target.position.z);
+            // Inicializa a órbita alinhada ao yaw atual do personagem. Ao voltar
+            // da câmera livre, isso reposiciona a câmera no offset orbital padrão.
+            this.yaw = target.rotation.y;
+            this.cameraHeading = this.yaw;
+            // Pitch padrão derivado do cameraOffset (0, 3.2, 6): asin(altura/raio)
+            // reproduz a inclinação suave do enquadramento original, já respeitando
+            // os limites verticais permitidos.
+            const pitchPadrao = Math.asin(this.cameraOffset.y / this.raioOrbital);
+            this.pitch = THREE.MathUtils.clamp(pitchPadrao, LIMITE_PITCH_MINIMO, LIMITE_PITCH_MAXIMO);
+            this.posicionarCameraOrbital();
         }
+    }
+
+    // Posiciona a câmera numa órbita esférica ao redor do alvo a partir do
+    // yaw/pitch atuais, mantendo o raio constante (this.raioOrbital) e apontando
+    // para o personagem. A magnitude do offset é sempre igual ao raio orbital,
+    // independentemente de yaw/pitch, preservando a distância de enquadramento.
+    posicionarCameraOrbital() {
+        const alvo = this.target.position;
+        const offset = new THREE.Vector3(
+            Math.sin(this.yaw) * Math.cos(this.pitch),
+            Math.sin(this.pitch),
+            Math.cos(this.yaw) * Math.cos(this.pitch)
+        ).multiplyScalar(this.raioOrbital);
+        this.camera.position.copy(alvo).add(offset);
+        this.camera.lookAt(alvo.x, alvo.y + 1.1, alvo.z);
     }
 
     // Método para desconectar / reconectar a câmera
@@ -123,11 +157,42 @@ export class CameraControls {
         this.input.endFrame();
     }
 
+    // Recompõe o vetor WASD no plano XZ (mesma montagem de simularPasso) e o
+    // rotaciona pelo yaw da câmera, devolvendo o ângulo (atan2) para o qual o
+    // personagem deve virar. Retorna null quando não há entrada de movimento
+    // (vetor dentro da zona morta), sinalizando que a rotação atual deve ser
+    // mantida. O ângulo é ajustado por +PI porque a frente do modelo FBX
+    // aponta para +Z (o oposto da convenção -Z do Three.js), de modo que o
+    // personagem encara a direção em que anda.
+    anguloMovimentoAtual() {
+        const direcao = new THREE.Vector3();
+        if (this.input.isDown('KeyW')) direcao.z -= 1;
+        if (this.input.isDown('KeyS')) direcao.z += 1;
+        if (this.input.isDown('KeyD')) direcao.x += 1;
+        if (this.input.isDown('KeyA')) direcao.x -= 1;
+        // Zona morta: WASD neutro (ou teclas opostas que se cancelam) não gira.
+        if (direcao.lengthSq() < 1e-6) return null;
+        direcao.applyAxisAngle(EIXO_Y, this.yaw);
+        // O modelo FBX do Bilby tem a frente no sentido +Z (oposto à convenção do
+        // Three.js, que encara -Z). Somamos PI para o boneco virar de frente para
+        // onde anda, em vez de andar de costas.
+        return Math.atan2(direcao.x, direcao.z) + Math.PI;
+    }
+
     updateTarget(deltaTime) {
         if (this.input.isPressed('Space') && this.onGround) {
             this.velocityY = JUMP_FORCE;
             this.onGround = false;
         }
+
+        // Mouse → yaw/pitch. Com o Pointer Lock inativo, consumirMouseDelta()
+        // devolve (0, 0), mantendo yaw/pitch inalterados.
+        const { x, y } = this.input.consumirMouseDelta();
+        this.yaw -= x * SENSIBILIDADE_MOUSE;
+        this.pitch = THREE.MathUtils.clamp(
+            this.pitch + y * SENSIBILIDADE_MOUSE,
+            LIMITE_PITCH_MINIMO, LIMITE_PITCH_MAXIMO
+        );
 
         // Passos pequenos evitam atravessar uma barreira ou pular um buraco
         // inteiro quando um frame demora. O comportamento da câmera é mantido.
@@ -135,21 +200,18 @@ export class CameraControls {
         const passos = Math.max(1, Math.ceil(tempo / (1 / 120)));
         for (let i = 0; i < passos; i++) this.simularPasso(tempo / passos);
 
-        const direcaoPercurso = direcaoPercursoEm(this.target.position.x, this.target.position.z);
-        this.target.rotation.y = interpolarAngulo(
-            this.target.rotation.y,
-            direcaoPercurso,
-            1 - Math.exp(-PLAYER_TURN_SPEED * deltaTime)
-        );
-        this.cameraHeading = interpolarAngulo(
-            this.cameraHeading,
-            this.target.rotation.y,
-            1 - Math.exp(-CAMERA_TURN_SPEED * deltaTime)
-        );
-        const offset = this.cameraOffset.clone().applyAxisAngle(EIXO_Y, this.cameraHeading);
-        const desiredPosition = this.target.position.clone().add(offset);
-        this.camera.position.lerp(desiredPosition, 1 - Math.pow(0.001, deltaTime));
-        this.camera.lookAt(this.target.position.x, this.target.position.y + 1.1, this.target.position.z);
+        // Gira o personagem na direção do movimento (relativa ao yaw da câmera).
+        // Dentro da zona morta (sem entrada), mantém a rotação atual.
+        const anguloMovimento = this.anguloMovimentoAtual();
+        if (anguloMovimento !== null) {
+            this.target.rotation.y = interpolarAngulo(
+                this.target.rotation.y,
+                anguloMovimento,
+                1 - Math.exp(-VELOCIDADE_ROTACAO_PERSONAGEM * tempo)
+            );
+        }
+
+        this.posicionarCameraOrbital();
     }
 
     simularPasso(deltaTime) {
@@ -164,7 +226,7 @@ export class CameraControls {
         if (this.input.isDown('KeyA')) this.movement.x -= 1;
 
         if (this.movement.lengthSq() > 0) {
-            this.movement.applyAxisAngle(EIXO_Y, this.target.rotation.y);
+            this.movement.applyAxisAngle(EIXO_Y, this.yaw);
             this.movement.normalize().multiplyScalar(MOVE_SPEED * deltaTime);
 
             const desejada = this.target.position.clone().add(this.movement);
