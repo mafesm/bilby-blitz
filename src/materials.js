@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { criarTexturaCenario } from './texturasCenario.js';
 
 let sharedMaterials;
 
@@ -9,6 +10,8 @@ export function getMaterials() {
 
 export function createMaterials() {
     const textures = createTextures();
+    const texturaPedra = criarTexturaCenario('pedra');
+    const texturaFolhas = criarTexturaCenario('folhas');
     const materials = {
         // Material para o chão
         ground: new THREE.MeshStandardMaterial({
@@ -23,7 +26,8 @@ export function createMaterials() {
             roughness: 1,
             side: THREE.DoubleSide
         }),
-        hedge: new THREE.MeshStandardMaterial({ color: 0x2E7D32, roughness: 1 }),
+        hedge: new THREE.MeshStandardMaterial({ map: texturaFolhas, roughness: 1 }),
+        pedraPlataforma: new THREE.MeshStandardMaterial({ map: texturaPedra, roughness: 0.95 }),
         bark: new THREE.MeshStandardMaterial({ color: 0x80552d, roughness: 1 }),
         cutWood: new THREE.MeshStandardMaterial({ color: 0xc89b64, roughness: 1 }),
 
@@ -46,7 +50,7 @@ export function createMaterials() {
         }),
 
         earth: new THREE.MeshStandardMaterial({ color: 0x79553b, roughness: 1 }),
-        vinePlaceholder: new THREE.MeshStandardMaterial({ color: 0x36b84a, roughness: 1 }),
+        vinePlaceholder: new THREE.MeshStandardMaterial({ map: texturaFolhas, color: 0xb5ed97, roughness: 1 }),
         flagPlaceholder: new THREE.MeshStandardMaterial({
             color: 0xf0f0f0, roughness: 1, side: THREE.DoubleSide
         }),

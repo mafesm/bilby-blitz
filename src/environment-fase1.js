@@ -16,11 +16,15 @@ import { criarBandeira } from './components/criarBandeira.js';
 import { criarPoco } from './components/criarPoco.js';
 import { criarCampoGrama } from './components/criarGrama.js';
 import { getMaterials } from './materials.js';
+import { ajustarTexturaBloco } from './texturasCenario.js';
 
 const geometriaBloco = new THREE.BoxGeometry(1, 1, 1);
 
 function criarBloco(material, largura, altura, comprimento, x, y, z) {
-    const bloco = new THREE.Mesh(geometriaBloco, material);
+    const geometria = material.map
+        ? ajustarTexturaBloco(geometriaBloco.clone(), largura, altura, comprimento)
+        : geometriaBloco;
+    const bloco = new THREE.Mesh(geometria, material);
     bloco.scale.set(largura, altura, comprimento);
     bloco.position.set(x, y, z);
     bloco.receiveShadow = true;
