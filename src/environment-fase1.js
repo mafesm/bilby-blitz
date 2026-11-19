@@ -5,7 +5,7 @@ import { criarArvore } from './components/criarArvore.js';
 import { criarArvoreTresCones } from './components/criarArvoreTresCones.js';
 import { criarPedra } from './components/criarPedra.js';
 import { criarCaixa } from './components/criarCaixa.js';
-import { criarCaixaMascara } from './components/maskBox.js';
+import { criarCaixaMascara } from './components/criarCaixaMascara.js';
 import { criarCaixaEstrela } from './components/criarEstrela.js';
 import { criarCaixaVida } from './components/criarCaixaVida.js';
 import { criarCaixaRelogio } from './components/criarCaixaRelogio.js';
@@ -75,14 +75,17 @@ export function createEnvironment(scene) {
         [22, -72], [41, -78]
     ];
     for (const [x, z] of caixas) fase.add(criarCaixa(x, GROUND_Y + 0.75, z));
+    
+    /*
     // Caixa de máscara de teste, ao lado da primeira caixa [0, -8]
     fase.add(criarCaixaMascara(2, GROUND_Y + 0.75, -8));
-    // Caixa da estrela de teste, do lado esquerdo da primeira caixa [0, -8]
+    // Caixa de pontos de teste, do lado esquerdo da primeira caixa [0, -8]
     fase.add(criarCaixaEstrela(-2, GROUND_Y + 0.75, -8));
     // Caixa de vida de teste, à frente das caixas iniciais
     fase.add(criarCaixaVida(0, GROUND_Y + 0.75, -11));
     // Caixa do relógio de teste, ao lado da caixa de vida
     fase.add(criarCaixaRelogio(2, GROUND_Y + 0.75, -11));
+    */
 
 
     // A primeira pilha é a base de lançamento para o vão de 12 unidades.

@@ -8,7 +8,7 @@ import { setupLights, setupLightControls } from './lights.js';
 import { CameraControls } from './cameraControls.js';
 import { Input } from './input.js';
 import { Combate } from './combat.js';
-import { createEnvironment } from './environment-p5.js';
+import { createEnvironment } from './environment-fase1.js';
 import { chegouAoFinal } from './fase.js';
 import { VIDAS_INICIAIS } from './config.js';
 import { Hud } from './hud.js';
