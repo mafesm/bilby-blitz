@@ -7,6 +7,7 @@ import { criarPedra } from './components/criarPedra.js';
 import { criarCaixa } from './components/criarCaixa.js';
 import { criarCaixaMascara } from './components/maskBox.js';
 import { criarCaixaEstrela } from './components/criarEstrela.js';
+import { criarCaixaVida } from './components/criarCaixaVida.js';
 import { criarTronco } from './components/criarTronco.js';
 import { criarPlataformaPedra } from './components/criarPlataformaPedra.js';
 import { criarPlataformaVerde } from './components/criarPlataformaVerde.js';
@@ -77,6 +78,10 @@ export function createEnvironment(scene) {
     fase.add(criarCaixaMascara(2, GROUND_Y + 0.75, -8));
     // Caixa da estrela de teste, do lado esquerdo da primeira caixa [0, -8]
     fase.add(criarCaixaEstrela(-2, GROUND_Y + 0.75, -8));
+    // Caixa de vida de teste, à frente das caixas iniciais
+    fase.add(criarCaixaVida(0, GROUND_Y + 0.75, -11));
+
+    
     // A primeira pilha é a base de lançamento para o vão de 12 unidades.
     // As demais pilhas mantêm uma rota alternativa ao lado.
     const pilhas = [
