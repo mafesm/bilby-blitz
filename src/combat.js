@@ -6,9 +6,10 @@ const DURACAO_DESAPARECIMENTO = 0.35;
 const geometriaOnda = new THREE.RingGeometry(0.75, 1, 40);
 
 export class Combate {
-    constructor(scene, personagem, { aoPontuar, aoAlterarColisores }) {
+    constructor(scene, personagem, { aoPontuar, aoAlterarColisores, aoQuebrar = () => {} }) {
         this.personagem = personagem;
         this.aoPontuar = aoPontuar;
+        this.aoQuebrar = aoQuebrar;
         this.aoAlterarColisores = aoAlterarColisores;
         this.alvos = new Map();
         this.desaparecendo = [];
@@ -53,22 +54,54 @@ export class Combate {
             this.limites.setFromObject(objeto);
             if (this.limites.distanceToPoint(this.posicao) > ALCANCE_GOLPE) continue;
 
-            // Desativa imediatamente, antes da animação, para não repetir pontos
-            // nem deixar uma colisão invisível ou dano durante o desaparecimento.
-            objeto.userData.quebravel = false;
-            objeto.userData.solid = false;
-            objeto.userData.topWalkable = false;
-            aoAtingir();
-            this.alvos.delete(objeto);
-            this.desaparecendo.push({
-                objeto, tempo: 0, escala: objeto.scale.clone(),
-                altura: objeto.position.y, rotacaoY: objeto.rotation.y
-            });
-            this.aoPontuar(objeto.userData.pontos ?? 0);
+            this.quebrar(objeto, aoAtingir);
             alterouColisores = true;
         }
 
         if (alterouColisores) this.aoAlterarColisores();
+    }
+
+    // Quebra o alvo (pontos, efeitos e animação de desaparecer). Usado pelo golpe e
+    // pelo pulo em cima da caixa.
+    quebrar(objeto, aoAtingir = () => {}) {
+        // Desativa imediatamente, antes da animação, para não repetir pontos
+        // nem deixar uma colisão invisível ou dano durante o desaparecimento.
+        objeto.userData.quebravel = false;
+        objeto.userData.solid = false;
+        objeto.userData.topWalkable = false;
+        aoAtingir();
+        this.aoQuebrar(objeto);
+        this.alvos.delete(objeto);
+        this.desaparecendo.push({
+            objeto, tempo: 0, escala: objeto.scale.clone(),
+            altura: objeto.position.y, rotacaoY: objeto.rotation.y
+        });
+        this.aoPontuar(objeto.userData.pontos ?? 0);
+    }
+
+    // Invulnerabilidade: tudo que encosta no personagem (cobras e caixas) é destruído
+    // como se tivesse sido golpeado. Chamado a cada frame enquanto durar o poder.
+    quebrarAoContato(raio) {
+        this.personagem.getWorldPosition(this.posicao).add(this.deslocamento);
+        let alterouColisores = false;
+        for (const [objeto, aoAtingir] of this.alvos) {
+            if (!objeto.parent || !objeto.visible || !objeto.userData.quebravel) continue;
+            // Caixa de máscara não quebra aqui: já está no máximo de stacks e perderia o efeito.
+            if (objeto.userData.tipo === 'mascara') continue;
+            this.limites.setFromObject(objeto);
+            if (this.limites.distanceToPoint(this.posicao) > raio) continue;
+            this.quebrar(objeto, aoAtingir);
+            alterouColisores = true;
+        }
+        if (alterouColisores) this.aoAlterarColisores();
+    }
+
+    // Pulo em cima da caixa. Devolve true se a caixa quebrou.
+    quebrarPorPulo(objeto) {
+        if (!objeto.parent || !objeto.userData.quebravel) return false;
+        this.quebrar(objeto, this.alvos.get(objeto));
+        this.aoAlterarColisores();
+        return true;
     }
 
     atualizar(deltaTime, atacar = false) {

@@ -75,19 +75,28 @@ export function createEnvironment(scene) {
         [22, -72], [41, -78]
     ];
     for (const [x, z] of caixas) fase.add(criarCaixa(x, GROUND_Y + 0.75, z));
+
+    const caixasAzuis = [
+        // Atrás do ponto de partida: quem só corre para frente nunca vê.
+        [-3.9, GROUND_Y + 0.75, 3.2],
+        // No topo da pilha de 2 blocos da rota alternativa (exige subir e golpear pulando).
+        [0, GROUND_Y + 0.75 + 2 * 1.5, -51],
+        // Canto do topo da parede de 4 blocos: só quem sobe a escadinha chega.
+        [44.25, GROUND_Y + 0.75 + 4 * 1.5, -79.25]
+    ];
+    for (const [x, y, z] of caixasAzuis) fase.add(criarCaixaEstrela(x, y, z));
+
     
-    /*
-    // Caixa de máscara de teste, ao lado da primeira caixa [0, -8]
-    fase.add(criarCaixaMascara(2, GROUND_Y + 0.75, -8));
-    // Caixa de pontos de teste, do lado esquerdo da primeira caixa [0, -8]
-    fase.add(criarCaixaEstrela(-2, GROUND_Y + 0.75, -8));
-    // Caixa de vida de teste, à frente das caixas iniciais
-    fase.add(criarCaixaVida(0, GROUND_Y + 0.75, -11));
-    // Caixa do relógio de teste, ao lado da caixa de vida
-    fase.add(criarCaixaRelogio(2, GROUND_Y + 0.75, -11));
-    */
+    // Relógio: logo no começo, para o speedrun valer o percurso inteiro.
+    fase.add(criarCaixaRelogio(3.2, GROUND_Y + 0.75, -4));
 
+    // Máscaras: uma antes de cada trecho difícil (poço, pilha e vão da curva).
+    const caixasMascara = [[-3.3, -12], [-3.5, -53.5], [36, -78.5]];
+    for (const [x, z] of caixasMascara) fase.add(criarCaixaMascara(x, GROUND_Y + 0.75, z));
 
+    // Vida: perto do segundo poço, como recompensa antes do trecho final da curva.
+    fase.add(criarCaixaVida(3.3, GROUND_Y + 0.75, -66));
+    
     // A primeira pilha é a base de lançamento para o vão de 12 unidades.
     // As demais pilhas mantêm uma rota alternativa ao lado.
     const pilhas = [

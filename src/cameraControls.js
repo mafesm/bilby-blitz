@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { coletarColisores, resolverMovimento, alturaChaoEm } from './collision.js';
+import { coletarColisores, resolverMovimento, escolherChao } from './collision.js';
 import {
     PLAYER_HALF_WIDTH, GROUND_Y, PENALIDADE_QUEDA, ALTURA_RETORNO_QUEDA,
     SENSIBILIDADE_MOUSE, LIMITE_PITCH_MINIMO, LIMITE_PITCH_MAXIMO, VELOCIDADE_ROTACAO_PERSONAGEM
@@ -10,9 +10,10 @@ const MOVE_SPEED = 10;
 const VERTICAL_SPEED = 8;
 const JUMP_FORCE = 11;
 const GRAVITY = 20;
+const QUIQUE_CAIXA = 8;
 const ROTATION_SPEED = 1.5;
 const PLAYER_TURN_SPEED = 10;
-const CAMERA_TURN_SPEED = 4;
+const CAMERA_TURN_SPEED = 3;
 const EIXO_Y = new THREE.Vector3(0, 1, 0);
 
 function interpolarAngulo(atual, destino, fator) {
@@ -29,6 +30,10 @@ export class CameraControls {
         this.savedTarget = null; // Guarda a referência do personagem para reconexão
         this.velocityY = 0;
         this.onGround = true;
+        // Chamado com a caixa quando o personagem pousa em cima de uma quebrável (main.js).
+        this.aoPousarEmCaixa = null;
+        // 1 = normal; main.js aumenta durante a invulnerabilidade da máscara.
+        this.multiplicadorVelocidade = 1;
         this.forward = new THREE.Vector3();
         this.right = new THREE.Vector3();
         this.movement = new THREE.Vector3();
@@ -36,14 +41,19 @@ export class CameraControls {
         this.rotation = camera.rotation.clone();
         this.cameraOffset = new THREE.Vector3(0, 3.2, 6);
         this.cameraHeading = 0;
+        this.desvioYaw = 0; // diferença entre o yaw da câmera e o yaw do personagem, usada para suavizar a rotação
+
         // Câmera orbital controlada pelo mouse: yaw (horizontal) e pitch
         // (vertical). O raio da órbita é a distância constante do cameraOffset,
         // preservando o enquadramento original (0, 3.2, 6).
+
         this.raioOrbital = this.cameraOffset.length();
         this.yaw = 0;
+
         // Pitch padrão derivado do cameraOffset: asin(altura / raio) reproduz a
         // inclinação suave para baixo do enquadramento original, já respeitando
         // os limites verticais permitidos.
+
         const pitchPadrao = Math.asin(this.cameraOffset.y / this.raioOrbital);
         this.pitch = THREE.MathUtils.clamp(pitchPadrao, LIMITE_PITCH_MINIMO, LIMITE_PITCH_MAXIMO);
         this.ultimoPisoSeguro = new THREE.Vector3();
@@ -78,23 +88,16 @@ export class CameraControls {
         this.savedTarget = target;
         this.target = target;
         if (this.target) {
-            // Inicializa a órbita alinhada ao yaw atual do personagem. Ao voltar
-            // da câmera livre, isso reposiciona a câmera no offset orbital padrão.
-            this.yaw = target.rotation.y;
-            this.cameraHeading = this.yaw;
-            // Pitch padrão derivado do cameraOffset (0, 3.2, 6): asin(altura/raio)
-            // reproduz a inclinação suave do enquadramento original, já respeitando
-            // os limites verticais permitidos.
+            this.cameraHeading = direcaoPercursoEm(target.position.x, target.position.z);
+            this.desvioYaw = 0;
+            this.yaw = this.cameraHeading;
+
             const pitchPadrao = Math.asin(this.cameraOffset.y / this.raioOrbital);
             this.pitch = THREE.MathUtils.clamp(pitchPadrao, LIMITE_PITCH_MINIMO, LIMITE_PITCH_MAXIMO);
             this.posicionarCameraOrbital();
         }
     }
 
-    // Posiciona a câmera numa órbita esférica ao redor do alvo a partir do
-    // yaw/pitch atuais, mantendo o raio constante (this.raioOrbital) e apontando
-    // para o personagem. A magnitude do offset é sempre igual ao raio orbital,
-    // independentemente de yaw/pitch, preservando a distância de enquadramento.
     posicionarCameraOrbital() {
         const alvo = this.target.position;
         const offset = new THREE.Vector3(
@@ -188,11 +191,21 @@ export class CameraControls {
         // Mouse → yaw/pitch. Com o Pointer Lock inativo, consumirMouseDelta()
         // devolve (0, 0), mantendo yaw/pitch inalterados.
         const { x, y } = this.input.consumirMouseDelta();
-        this.yaw -= x * SENSIBILIDADE_MOUSE;
+        this.desvioYaw -= x * SENSIBILIDADE_MOUSE;
         this.pitch = THREE.MathUtils.clamp(
             this.pitch + y * SENSIBILIDADE_MOUSE,
             LIMITE_PITCH_MINIMO, LIMITE_PITCH_MAXIMO
         );
+
+        // A câmera gira junto com o percurso (curva da fase) e o mouse só soma um
+        // desvio por cima. O yaw também orienta o WASD, então "para frente" segue o caminho.
+        const direcaoPercurso = direcaoPercursoEm(this.target.position.x, this.target.position.z);
+        this.cameraHeading = interpolarAngulo(
+            this.cameraHeading,
+            direcaoPercurso,
+            1 - Math.exp(-CAMERA_TURN_SPEED * Math.min(Math.max(deltaTime, 0), 0.1))
+        );
+        this.yaw = this.cameraHeading + this.desvioYaw;
 
         // Passos pequenos evitam atravessar uma barreira ou pular um buraco
         // inteiro quando um frame demora. O comportamento da câmera é mantido.
@@ -217,6 +230,7 @@ export class CameraControls {
     simularPasso(deltaTime) {
         const pos = this.target.position;
         const pesYAnterior = pos.y;
+        const estavaNoChao = this.onGround;
         this.velocityY -= GRAVITY * deltaTime;
         const proximaAltura = pos.y + this.velocityY * deltaTime;
         this.movement.set(0, 0, 0);
@@ -227,7 +241,7 @@ export class CameraControls {
 
         if (this.movement.lengthSq() > 0) {
             this.movement.applyAxisAngle(EIXO_Y, this.yaw);
-            this.movement.normalize().multiplyScalar(MOVE_SPEED * deltaTime);
+            this.movement.normalize().multiplyScalar(MOVE_SPEED * this.multiplicadorVelocidade * deltaTime);
 
             const desejada = this.target.position.clone().add(this.movement);
             const dentroDoCaminho = resolverLimitesPercurso(pos, desejada, PLAYER_HALF_WIDTH);
@@ -245,10 +259,16 @@ export class CameraControls {
 
         pos.y = proximaAltura;
         const piso = alturaPisoEm(pos.x, pos.z, PLAYER_HALF_WIDTH) + this.chaoBaseY;
-        const chao = alturaChaoEm(pos.x, pos.z, PLAYER_HALF_WIDTH, pesYAnterior,
-            this.colisores, piso, this.chaoBaseY);
+        const { altura: chao, colisor: colisorChao } = escolherChao(pos.x, pos.z, PLAYER_HALF_WIDTH, pesYAnterior, this.colisores, piso, this.chaoBaseY);
         this.onGround = this.velocityY <= 0 && pos.y <= chao && pesYAnterior >= chao - 0.05;
-        if (this.onGround) {
+        const caixaPisada = colisorChao?.objeto;
+        if (this.onGround && !estavaNoChao && caixaPisada?.userData.quebravel) {
+            // Caiu em cima de uma caixa quebrável: ela quebra e o personagem quica.
+            pos.y = chao;
+            this.velocityY = this.input.isDown('Space') ? JUMP_FORCE : QUIQUE_CAIXA;
+            this.onGround = false;
+            this.aoPousarEmCaixa?.(caixaPisada);
+        } else if (this.onGround) {
             pos.y = chao;
             this.velocityY = 0;
             if (Math.abs(pos.y - this.chaoBaseY - GROUND_Y) < 0.01 && pisoSeguroEm(pos.x, pos.z)) {
