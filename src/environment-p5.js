@@ -5,6 +5,8 @@ import { criarArvore } from './components/criarArvore.js';
 import { criarArvoreTresCones } from './components/criarArvoreTresCones.js';
 import { criarPedra } from './components/criarPedra.js';
 import { criarCaixa } from './components/criarCaixa.js';
+import { criarCaixaMascara } from './components/maskBox.js';
+import { criarCaixaEstrela } from './components/criarEstrela.js';
 import { criarTronco } from './components/criarTronco.js';
 import { criarPlataformaPedra } from './components/criarPlataformaPedra.js';
 import { criarPlataformaVerde } from './components/criarPlataformaVerde.js';
@@ -71,7 +73,10 @@ export function createEnvironment(scene) {
         [22, -72], [41, -78]
     ];
     for (const [x, z] of caixas) fase.add(criarCaixa(x, GROUND_Y + 0.75, z));
-
+    // Caixa de máscara de teste, ao lado da primeira caixa [0, -8]
+    fase.add(criarCaixaMascara(2, GROUND_Y + 0.75, -8));
+    // Caixa da estrela de teste, do lado esquerdo da primeira caixa [0, -8]
+    fase.add(criarCaixaEstrela(-2, GROUND_Y + 0.75, -8));
     // A primeira pilha é a base de lançamento para o vão de 12 unidades.
     // As demais pilhas mantêm uma rota alternativa ao lado.
     const pilhas = [
