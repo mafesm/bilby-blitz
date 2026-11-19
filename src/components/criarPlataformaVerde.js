@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { getMaterials } from '../materials.js';
+import { ajustarTexturaBloco } from '../texturasCenario.js';
 
-const geometria = new THREE.BoxGeometry(2, 1.2, 2);
+const geometria = ajustarTexturaBloco(new THREE.BoxGeometry(2, 1.2, 2), 2, 1.2, 2);
 
 // Apoio provisório de vinha: permanece suspenso sobre o poço.
 export function criarPlataformaVerde(x, y, z) {
