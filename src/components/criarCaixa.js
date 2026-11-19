@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { getMaterials } from '../materials.js';
-import { PONTOS_CAIXA } from '../config.js';
+import { SCORE } from '../config.js';
 
 const caixaGeometry = new THREE.BoxGeometry(1.5, 1.5, 1.5);
 
@@ -25,7 +25,7 @@ export function criarCaixa(x, y, z) {
     // O personagem pode pousar e ficar em cima da caixa (colisão de topo).
     caixa.userData.topWalkable = true;
     caixa.userData.quebravel = true;
-    caixa.userData.pontos = PONTOS_CAIXA;
+    caixa.userData.pontos = SCORE.PONTOS_CAIXA;
 
     // Madeira para as vigas
     const materialViga = new THREE.MeshStandardMaterial({

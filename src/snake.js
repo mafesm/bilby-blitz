@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { coletarColisores } from './collision.js';
-import { DANO_COBRA, INTERVALO_DANO_COBRA, GROUND_Y, PLAYER_HALF_WIDTH, PONTOS_COBRA } from './config.js';
+import {
+    DANO_COBRA, INTERVALO_DANO_COBRA, GROUND_Y, PLAYER_HALF_WIDTH, SCORE
+} from './config.js';
 
 const CAMINHO_MODELO = new URL('./components/snake.glb', import.meta.url).href;
 const COMPRIMENTO_COBRA = 2.4;
@@ -94,7 +96,7 @@ export class Cobra {
         this.colisor = { tipo: 'aabb' };
         this.objeto.userData.solid = true;
         this.objeto.userData.quebravel = true;
-        this.objeto.userData.pontos = PONTOS_COBRA;
+        this.objeto.userData.pontos = SCORE.PONTOS_COBRA;
         // O coletor reutiliza esta referência; os limites mudam a cada frame.
         this.objeto.userData.colisorDinamico = this.colisor;
         this.atualizarLimites();

@@ -22,7 +22,7 @@
       display: block;
     }
 
-    #controls-help, #score, #phase-message, #lives {
+    #controls-help, #score, #phase-message, #lives, #time {
       position: fixed;
       top: 16px;
       left: 16px;
@@ -49,6 +49,12 @@
 
     #lives {
       top: 62px;
+      left: auto;
+      right: 16px;
+    }
+
+    #time {
+      top: 108px;
       left: auto;
       right: 16px;
     }
@@ -94,9 +100,10 @@
 <body>
   <!-- Área reservada para a cena 3D e a interface do jogo. -->
   <main id="game"></main>
-  <div id="controls-help">G: câmera livre | Mascote: WASD + Espaço | X: golpear | Câmera livre: WASD, Q/E e setas</div>
+  <div id="controls-help">G: câmera livre | Mascote: WASD + Espaço | X: golpear | Câmera livre: WASD, Q/E e setas | P/Esc: pausar</div>
   <div id="score" role="status" aria-live="polite">Pontos: 0</div>
   <div id="lives" role="status" aria-live="polite"></div>
+  <div id="time" role="status" aria-live="polite"></div>
   <div id="phase-message" role="status" aria-live="polite"></div>
   <dialog id="game-over" aria-labelledby="game-over-title" aria-describedby="final-score">
     <h1 id="game-over-title">Fim de jogo</h1>
