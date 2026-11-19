@@ -64,7 +64,7 @@ export class Combate {
                 objeto, tempo: 0, escala: objeto.scale.clone(),
                 altura: objeto.position.y, rotacaoY: objeto.rotation.y
             });
-            this.aoPontuar(objeto.userData.pontos ?? 0);
+            this.aoPontuar(objeto.userData.pontos ?? 0, objeto);
             alterouColisores = true;
         }
 

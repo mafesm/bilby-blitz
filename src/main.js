@@ -10,81 +10,79 @@ import { Input } from './input.js';
 import { Combate } from './combat.js';
 import { createEnvironment } from './environment-fase1.js';
 import { chegouAoFinal } from './fase.js';
-import { VIDAS_INICIAIS } from './config.js';
+import { GameState } from './gameState.js';
+import { ScoreManager } from './scoreManager.js';
 import { Hud } from './hud.js';
 import * as THREE from 'three';
 
 class Game {
     constructor() {
         this.clock = new THREE.Clock();
-        this.vidas = VIDAS_INICIAIS;
-        this.estado = 'jogando';
-        this.pontos = 0;
-        this.faseConcluida = false;
+        this.gameState = new GameState();
+        this.scoreManager = new ScoreManager();
         this.cobras = [];
         this.init();
     }
     animate() {
         requestAnimationFrame(this.animate.bind(this)); // Chamar a função animate novamente para criar um loop de animação.
-        const deltaTime = this.clock.getDelta();
-        if (this.estado === 'gameOver') {
-            this.renderer.render(this.scene, this.camera);
-            return;
+        const deltaTime = Math.min(this.clock.getDelta(), 0.1);
+        if (this.input.isPressed('KeyP') || this.input.isPressed('Escape')) {
+            if (this.gameState.state === 'playing') this.gameState.transitionTo('paused');
+            else if (this.gameState.state === 'paused') this.gameState.transitionTo('playing');
         }
-        // Os controles limpam pressedKeys; captura X antes de atualizá-los.
-        const atacar = this.input.isPressed('KeyX');
-        this.cameraControls.update(deltaTime);
-        // Uma queda pode encerrar a partida durante a atualização dos controles.
-        if (this.estado === 'gameOver') {
-            this.renderer.render(this.scene, this.camera);
-            return;
-        }
-        this.combate?.atualizar(deltaTime, atacar && this.cameraControls.target === this.mascote);
-        if (this.mascote) {
-            for (const cobra of this.cobras) {
-                cobra.atualizar(deltaTime, this.mascote);
-                if (this.estado === 'gameOver') break;
+
+        if (this.gameState.state === 'playing') {
+            // Os controles limpam pressedKeys; captura X antes de atualizá-los.
+            const atacar = this.input.isPressed('KeyX');
+            this.cameraControls.update(deltaTime);
+            if (this.gameState.state === 'playing') {
+                this.combate?.atualizar(deltaTime, atacar && this.cameraControls.target === this.mascote);
+                if (this.mascote) {
+                    for (const cobra of this.cobras) {
+                        cobra.atualizar(deltaTime, this.mascote);
+                        if (this.gameState.state !== 'playing') break;
+                    }
+                }
+                this.atualizarMascara?.(deltaTime);
+            }
+
+            if (this.gameState.state === 'playing') {
+                if (this.scoreManager.update(deltaTime)) {
+                    this.gameState.transitionTo('defeat');
+                } else if (this.mascote && chegouAoFinal(this.mascote.position.x, this.mascote.position.z)) {
+                    this.gameState.transitionTo('victory');
+                }
+                this.hud.atualizarTempo(this.scoreManager.timeRemaining);
             }
         }
-        if (this.estado === 'gameOver') {
-            this.renderer.render(this.scene, this.camera);
-            return;
-        }
-        this.atualizarMascara?.(deltaTime);
-        if (this.mascote && !this.faseConcluida && chegouAoFinal(this.mascote.position.x, this.mascote.position.z)) {
-            this.faseConcluida = true;
-            if (this.painelMensagem) this.painelMensagem.textContent = 'Fase concluída!';
-        }
-        // this.debugCube.rotation.x += 0.01;
-        // this.debugCube.rotation.y += 0.01;
+
+        this.input.endFrame();
         this.renderer.render(this.scene, this.camera);
-
     }
+
     perderVida() {
-        if (this.estado !== 'jogando') return;
-        this.vidas = Math.max(0, this.vidas - 1);
-        this.hud.atualizarVidas(this.vidas);
-        if (this.vidas === 0) this.encerrarJogo();
-    }
-
-    encerrarJogo() {
-        if (this.estado === 'gameOver') return;
-        this.estado = 'gameOver';
-        this.input.dispose();
-        this.input.onBlur();
-        this.hud.mostrarFimDeJogo(this.pontos);
+        if (this.gameState.state !== 'playing') return;
+        const aindaTemVidas = this.scoreManager.loseLife();
+        this.hud.atualizarVidas(this.scoreManager.lives);
+        if (!aindaTemVidas) this.gameState.transitionTo('defeat');
     }
 
     alterarPontos(pontos) {
-        const pontosAnteriores = this.pontos;
-        this.pontos = Math.max(0, this.pontos + pontos);
-        const variacao = this.pontos - pontosAnteriores;
-        if (this.mascote) {
-            this.mascote.userData.pontos = this.pontos;
-            this.mascote.dispatchEvent({ type: 'pontos', pontos: variacao, total: this.pontos });
-        }
-        if (this.painelPontos) this.painelPontos.textContent = `Pontos: ${this.pontos}`;
+        const pontosAnteriores = this.scoreManager.points;
+        this.scoreManager.addPoints(pontos);
+        const variacao = this.scoreManager.points - pontosAnteriores;
+        this.atualizarPainelPontos(variacao);
         return variacao;
+    }
+
+    atualizarPainelPontos(variacao) {
+        if (this.mascote) {
+            this.mascote.userData.pontos = this.scoreManager.points;
+            this.mascote.dispatchEvent({
+                type: 'pontos', pontos: variacao, total: this.scoreManager.points
+            });
+        }
+        if (this.painelPontos) this.painelPontos.textContent = `Pontos: ${this.scoreManager.points}`;
     }
 
     init() {
@@ -97,11 +95,24 @@ class Game {
         // Pointer Lock. Ordem obrigatória: SceneBase -> Input -> CameraControls.
         this.input = new Input(this.renderer.domElement);
         this.hud = new Hud();
-        this.hud.atualizarVidas(this.vidas);
+        this.hud.atualizarVidas(this.scoreManager.lives);
+        this.hud.atualizarTempo(this.scoreManager.timeRemaining);
         this.painelPontos = document.getElementById('score');
         this.painelMensagem = document.getElementById('phase-message');
+        this.gameState.subscribe((estado) => {
+            if (estado === 'paused') {
+                this.painelMensagem.textContent = 'Pausado';
+            } else if (estado === 'playing') {
+                this.painelMensagem.textContent = '';
+            } else {
+                this.painelMensagem.textContent = estado === 'victory'
+                    ? 'Fase concluída!'
+                    : 'Tempo esgotado ou vidas encerradas.';
+                this.hud.mostrarFimDeJogo(this.scoreManager.points, estado);
+            }
+        });
         this.scene.addEventListener('queda', ({ penalidade }) => {
-            if (this.estado !== 'jogando') return;
+            if (this.gameState.state !== 'playing') return;
             this.alterarPontos(-penalidade);
             this.perderVida();
         });
@@ -116,7 +127,15 @@ class Game {
             this.mascote = mascot;
             this.cameraControls.setTarget(mascot);
             this.combate = new Combate(this.scene, mascot, {
-                aoPontuar: (pontos) => this.alterarPontos(pontos),
+                aoPontuar: (pontos, objeto) => {
+                    if (objeto.name === 'cobra-patrulha') {
+                        this.alterarPontos(pontos);
+                    } else {
+                        const pontosAnteriores = this.scoreManager.points;
+                        this.scoreManager.breakBox(pontos);
+                        this.atualizarPainelPontos(this.scoreManager.points - pontosAnteriores);
+                    }
+                },
                 aoAlterarColisores: () => {
                     this.cameraControls.rebuildColliders();
                     this.cobras.forEach((cobra) => cobra.atualizarColisores(this.scene));

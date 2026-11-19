@@ -18,16 +18,26 @@ export const CAMERA_FAR = 1000;
 // Trata o Bilby como um quadrado de lado 2 * PLAYER_HALF_WIDTH visto de cima.
 export const PLAYER_HALF_WIDTH = 0.4;
 
+// Regras de pontuação e partida.
+export const SCORE = Object.freeze({
+    PONTOS_FRUTA: 10,
+    PONTOS_CAIXA: 100,
+    PONTOS_COBRA: 200
+});
+
+export const RULES = Object.freeze({
+    VIDAS_INICIAIS: 3,
+    FRUTAS_POR_VIDA_EXTRA: 100,
+    TEMPO_LIMITE_FASE: 300
+});
+
 // Dano por contato com a cobra e intervalo entre aplicações, em segundos.
-export const VIDAS_INICIAIS = 3;
 export const DANO_COBRA = 1;
 export const INTERVALO_DANO_COBRA = 1;
 
 // Golpe em área ao pressionar X. Distância em unidades e tempos em segundos.
 export const ALCANCE_GOLPE = 1.6;
 export const INTERVALO_GOLPE = 0.45;
-export const PONTOS_CAIXA = 100;
-export const PONTOS_COBRA = 200;
 
 export const PENALIDADE_QUEDA = 100;
 export const ALTURA_RETORNO_QUEDA = -3;

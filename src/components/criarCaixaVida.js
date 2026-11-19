@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { PONTOS_CAIXA } from '../config.js';
+import { SCORE } from '../config.js';
 
 // Geometrias compartilhadas
 const caixaGeometry = new THREE.BoxGeometry(1.5, 1.5, 1.5);
@@ -68,7 +68,7 @@ export function criarCaixaVida(x, y, z) {
     caixa.userData.solid = true;
     caixa.userData.topWalkable = true;
     caixa.userData.quebravel = true;
-    caixa.userData.pontos = PONTOS_CAIXA;
+    caixa.userData.pontos = SCORE.PONTOS_CAIXA;
 
     // Marca para o sistema de quebra saber o que conceder
     caixa.userData.tipo = 'vida';
