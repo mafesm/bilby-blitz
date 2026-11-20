@@ -47,6 +47,7 @@ function criarColisorAABB(obj) {
     }
     const colisor = {
         tipo: 'aabb',
+        objeto: obj, 
         minX: _box.min.x,
         maxX: _box.max.x,
         minZ: _box.min.z,
@@ -90,7 +91,7 @@ function criarColisorCapsula(obj) {
 
     const colisor = {
         tipo: 'capsula',
-        // Segmento projetado no plano XZ (ignora a altura Y).
+        objeto: obj,
         ax: _pontoA.x,
         az: _pontoA.z,
         bx: _pontoB.x,
@@ -188,15 +189,15 @@ function sobreOTopo(x, z, halfWidth, colisor) {
     return colideComColisor(x, z, halfWidth, colisor);
 }
 
-// Altura do "chão" sob o personagem em (x, z): o maior topo entre os colisores
-// pisáveis cuja projeção XZ contém o personagem e dos quais ele vinha de cima
-// (`pesYAnterior` >= topo - tolerância). Retorna `piso` se nenhum se aplica —
-// então, ao sair da borda da caixa, o personagem cai naturalmente.
-// Usar a altura dos pés do frame ANTERIOR evita atravessar o topo ao cair.
-// `offsetY` desloca os topos dos colisores (coordenadas de mundo) para o
-// referencial de `position.y` do mascote (ver chaoBaseY em cameraControls.js).
 export function alturaChaoEm(x, z, halfWidth, pesYAnterior, colisores, piso, offsetY = 0) {
+    return escolherChao(x, z, halfWidth, pesYAnterior, colisores, piso, offsetY).altura;
+}
+
+// Igual a alturaChaoEm, mas devolve também o colisor que sustenta o personagem
+// (null quando o chão é o piso). Permite saber em qual caixa ele pousou.
+export function escolherChao(x, z, halfWidth, pesYAnterior, colisores, piso, offsetY = 0) {
     let melhor = piso;
+    let colisorChao = null;
     for (const colisor of colisores) {
         if (!colisor.pisavel) {
             continue;
@@ -210,9 +211,10 @@ export function alturaChaoEm(x, z, halfWidth, pesYAnterior, colisores, piso, off
         }
         if (sobreOTopo(x, z, halfWidth, colisor)) {
             melhor = topo;
+            colisorChao = colisor;
         }
     }
-    return melhor;
+    return { altura: melhor, colisor: colisorChao };
 }
 
 // Resolve o movimento de `posAtual` até `posDesejada` tratando o personagem

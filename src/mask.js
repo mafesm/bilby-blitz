@@ -157,5 +157,8 @@ export function acompanharPersonagem(mascara, personagem, scene) {
     }
 
     atualizar(0);
+    // Faz a próxima atualização posicionar a máscara direto no lugar, sem deslizar
+    // desde onde ela estava (usado quando ela reaparece depois de sumir).
+    atualizar.reiniciar = () => { iniciou = false; };
     return atualizar;
 }

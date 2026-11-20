@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { SCORE } from '../config.js';
 
 // Geometrias da caixa
 const caixaGeometry = new THREE.BoxGeometry(1.5, 1.5, 1.5);
@@ -94,7 +93,7 @@ export function criarCaixaRelogio(x, y, z) {
     caixa.userData.solid = true;
     caixa.userData.topWalkable = true;
     caixa.userData.quebravel = true;
-    caixa.userData.pontos = SCORE.PONTOS_CAIXA;
+    caixa.userData.pontos = 0;
 
     // Marca para o sistema de quebra saber que tipo de caixa é
     caixa.userData.tipo = 'relogio';

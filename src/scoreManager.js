@@ -10,7 +10,6 @@ export class ScoreManager {
         this.points = 0;
         this.boxes = 0;
         this.lives = RULES.VIDAS_INICIAIS;
-        this.timeRemaining = RULES.TEMPO_LIMITE_FASE;
     }
 
     collectFruit() {
@@ -37,13 +36,12 @@ export class ScoreManager {
         return this.points;
     }
 
+    gainLife() {
+        this.lives += 1;
+    }
+
     loseLife() {
         this.lives = Math.max(0, this.lives - 1);
         return this.lives > 0;
-    }
-
-    update(dt) {
-        this.timeRemaining = Math.max(0, this.timeRemaining - Math.max(0, dt));
-        return this.timeRemaining === 0;
     }
 }
