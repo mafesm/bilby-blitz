@@ -1,6 +1,6 @@
 const MOVEMENT_KEYS = new Set([
     'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'Space', 'KeyX',
-    'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+    'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyP', 'Escape',
 ]);
 
 export class Input {

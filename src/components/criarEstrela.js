@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { PONTOS_CAIXA_AZUL } from '../config.js';
+import { SCORE } from '../config.js';
 
 const TAMANHO = 1.5;
 // Geometrias compartilhadas
@@ -56,7 +56,7 @@ export function criarCaixaEstrela(x, y, z) {
     caixa.userData.solid = true;
     caixa.userData.topWalkable = true;
     caixa.userData.quebravel = true;
-    caixa.userData.pontos = PONTOS_CAIXA_AZUL;
+    caixa.userData.pontos = SCORE.PONTOS_CAIXA_AZUL;
     caixa.userData.tipo = 'estrela';
 
     // Molduras azuis nas quatro faces laterais (face 0 = frente, +Z)

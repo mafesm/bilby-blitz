@@ -2,6 +2,7 @@ export class Hud {
     constructor() {
         this.painelVidas = document.getElementById('lives');
         this.painelFim = document.getElementById('game-over');
+        this.tituloFim = document.getElementById('game-over-title');
         this.pontuacaoFinal = document.getElementById('final-score');
         this.botaoReiniciar = document.getElementById('restart');
         this.painelMascara = this.criarPainel(108, 'right');
@@ -41,7 +42,8 @@ export class Hud {
         this.painelVidas.textContent = `Vidas: ${vidas}`;
     }
 
-    mostrarFimDeJogo(pontos) {
+    mostrarFimDeJogo(pontos, estado = 'defeat') {
+        this.tituloFim.textContent = estado === 'victory' ? 'Vitória!' : 'Fim de jogo';
         this.pontuacaoFinal.textContent = `Pontuação final: ${pontos}`;
         this.painelFim.showModal();
         this.botaoReiniciar.focus();

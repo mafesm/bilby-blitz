@@ -10,7 +10,9 @@ import { Input } from './input.js';
 import { Combate } from './combat.js';
 import { createEnvironment } from './environment-fase1.js';
 import { chegouAoFinal } from './fase.js';
-import { VIDAS_INICIAIS, META_PONTOS_SPEEDRUN, VELOCIDADE_INVULNERAVEL, RAIO_CONTATO_INVULNERAVEL, DURACAO_IMUNIDADE_DANO } from './config.js';
+import { META_PONTOS_SPEEDRUN, VELOCIDADE_INVULNERAVEL, RAIO_CONTATO_INVULNERAVEL, DURACAO_IMUNIDADE_DANO } from './config.js';
+import { GameState } from './gameState.js';
+import { ScoreManager } from './scoreManager.js';
 import { Hud } from './hud.js';
 import { PoderMascara } from './maskPower.js';
 import { Speedrun, formatarTempo } from './speedrun.js';
@@ -19,10 +21,8 @@ import * as THREE from 'three';
 class Game {
     constructor() {
         this.clock = new THREE.Clock();
-        this.vidas = VIDAS_INICIAIS;
-        this.estado = 'jogando';
-        this.pontos = 0;
-        this.faseConcluida = false;
+        this.gameState = new GameState();
+        this.scoreManager = new ScoreManager();
         this.cobras = [];
         this.tempoImuneDano = 0;
         this.mascara = null; // Máscara: modelo 3D (carregado em init) e poder (stacks/invulnerabilidade).
@@ -34,51 +34,49 @@ class Game {
     }
     animate() {
         requestAnimationFrame(this.animate.bind(this)); // Chamar a função animate novamente para criar um loop de animação.
-        const deltaTime = this.clock.getDelta();
-        if (this.estado === 'gameOver') {
-            this.renderer.render(this.scene, this.camera);
-            return;
-        }
-        // Os controles limpam pressedKeys; captura X antes de atualizá-los.
-        const atacar = this.input.isPressed('KeyX');
-        this.cameraControls.multiplicadorVelocidade = this.poderMascara.invulneravel ? VELOCIDADE_INVULNERAVEL : 1;
-        this.cameraControls.update(deltaTime);
-        // Uma queda pode encerrar a partida durante a atualização dos controles.
-        if (this.estado === 'gameOver') {
-            this.renderer.render(this.scene, this.camera);
-            return;
-        }
-        this.combate?.atualizar(deltaTime, atacar && this.cameraControls.target === this.mascote);
-        
-        if (this.poderMascara.invulneravel && this.cameraControls.target === this.mascote) {
-            this.combate?.quebrarAoContato(RAIO_CONTATO_INVULNERAVEL);
+        const deltaTime = Math.min(this.clock.getDelta(), 0.1);
+        if (this.input.isPressed('KeyP') || this.input.isPressed('Escape')) {
+            if (this.gameState.state === 'playing') this.gameState.transitionTo('paused');
+            else if (this.gameState.state === 'paused') this.gameState.transitionTo('playing');
         }
 
-        if (this.mascote) {
-            for (const cobra of this.cobras) {
-                cobra.atualizar(deltaTime, this.mascote);
-                if (this.estado === 'gameOver') break;
+        if (this.gameState.state === 'playing') {
+            // Os controles limpam pressedKeys; captura X antes de atualizá-los.
+            const atacar = this.input.isPressed('KeyX');
+            this.cameraControls.multiplicadorVelocidade = this.poderMascara.invulneravel ? VELOCIDADE_INVULNERAVEL : 1;
+            this.cameraControls.update(deltaTime);
+            // Uma queda pode encerrar a partida durante a atualização dos controles.
+            if (this.gameState.state === 'playing') {
+                this.combate?.atualizar(deltaTime, atacar && this.cameraControls.target === this.mascote);
+
+                if (this.poderMascara.invulneravel && this.cameraControls.target === this.mascote) {
+                    this.combate?.quebrarAoContato(RAIO_CONTATO_INVULNERAVEL);
+                }
+
+                if (this.mascote) {
+                    for (const cobra of this.cobras) {
+                        cobra.atualizar(deltaTime, this.mascote);
+                        if (this.gameState.state !== 'playing') break;
+                    }
+                }
+            }
+
+            if (this.gameState.state === 'playing') {
+                this.atualizarPoderes(deltaTime);
+                this.atualizarImunidadeDano(deltaTime);
+                if (this.mascote && chegouAoFinal(this.mascote.position.x, this.mascote.position.z)) {
+                    this.gameState.transitionTo('victory');
+                }
             }
         }
-        if (this.estado === 'gameOver') {
-            this.renderer.render(this.scene, this.camera);
-            return;
-        }
-        this.atualizarPoderes(deltaTime);
-        this.atualizarImunidadeDano(deltaTime);
-        if (this.mascote && !this.faseConcluida && chegouAoFinal(this.mascote.position.x, this.mascote.position.z)) {
-            this.faseConcluida = true;
-            if (this.painelMensagem) this.painelMensagem.textContent = this.mensagemFinal();
-        }
-        // this.debugCube.rotation.x += 0.01;
-        // this.debugCube.rotation.y += 0.01;
-        this.renderer.render(this.scene, this.camera);
 
+        this.input.endFrame();
+        this.renderer.render(this.scene, this.camera);
     }
     // --- Caixas especiais -------------------------------------------------
     // Chamado pelo Combate para toda caixa/alvo quebrado; cada tipo faz o seu efeito.
     aoQuebrarCaixa(objeto) {
-        if (this.estado !== 'jogando') return;
+        if (this.gameState.state !== 'playing') return;
         switch (objeto.userData.tipo) {
             case 'vida': this.ganharVida(); break;
             case 'mascara': this.poderMascara.adicionarStack(); break;
@@ -87,8 +85,8 @@ class Game {
     }
 
     ganharVida() {
-        this.vidas += 1;
-        this.hud.atualizarVidas(this.vidas);
+        this.scoreManager.gainLife();
+        this.hud.atualizarVidas(this.scoreManager.lives);
     }
 
     // Tempo, poder da máscara e aparência da máscara, a cada frame.
@@ -130,11 +128,11 @@ class Game {
     textoSpeedrun() {
         const { ativo, finalizado, tempo } = this.speedrun;
         if (!ativo && !finalizado) return '';
-        return `⏱ ${formatarTempo(tempo)} | Meta: ${this.pontos}/${META_PONTOS_SPEEDRUN} pts`;
+        return `⏱ ${formatarTempo(tempo)} | Meta: ${this.scoreManager.points}/${META_PONTOS_SPEEDRUN} pts`;
     }
 
     mensagemFinal() {
-        const resultado = this.speedrun.finalizar(this.pontos);
+        const resultado = this.speedrun.finalizar(this.scoreManager.points);
         if (!resultado) return 'Fase concluída!';
         const meta = resultado.metaAtingida
             ? `meta de ${META_PONTOS_SPEEDRUN} pts atingida ✓`
@@ -145,7 +143,7 @@ class Game {
     // Dano de uma entidade (cobra). Depois de um dano, o Bilby fica imune por um
     // instante para não perder várias vidas em sequência encostando na mesma cobra.
     receberDano() {
-        if (this.estado !== 'jogando' || this.tempoImuneDano > 0) return;
+        if (this.gameState.state !== 'playing' || this.tempoImuneDano > 0) return;
         if (this.poderMascara.invulneravel) return;
         this.tempoImuneDano = DURACAO_IMUNIDADE_DANO;
         if (this.poderMascara.absorverDano()) return;
@@ -160,31 +158,28 @@ class Game {
     }
 
     perderVida() {
-        if (this.estado !== 'jogando') return;
-        this.vidas = Math.max(0, this.vidas - 1);
-        this.hud.atualizarVidas(this.vidas);
-        if (this.vidas === 0) this.encerrarJogo();
-    }
-
-    encerrarJogo() {
-        if (this.estado === 'gameOver') return;
-        this.estado = 'gameOver';
-        if (this.mascote) this.mascote.visible = true;  // não deixa o Bilby invisível no fim
-        this.input.dispose();
-        this.input.onBlur();
-        this.hud.mostrarFimDeJogo(this.pontos);
+        if (this.gameState.state !== 'playing') return;
+        const aindaTemVidas = this.scoreManager.loseLife();
+        this.hud.atualizarVidas(this.scoreManager.lives);
+        if (!aindaTemVidas) this.gameState.transitionTo('defeat');
     }
 
     alterarPontos(pontos) {
-        const pontosAnteriores = this.pontos;
-        this.pontos = Math.max(0, this.pontos + pontos);
-        const variacao = this.pontos - pontosAnteriores;
-        if (this.mascote) {
-            this.mascote.userData.pontos = this.pontos;
-            this.mascote.dispatchEvent({ type: 'pontos', pontos: variacao, total: this.pontos });
-        }
-        if (this.painelPontos) this.painelPontos.textContent = `Pontos: ${this.pontos}`;
+        const pontosAnteriores = this.scoreManager.points;
+        this.scoreManager.addPoints(pontos);
+        const variacao = this.scoreManager.points - pontosAnteriores;
+        this.atualizarPainelPontos(variacao);
         return variacao;
+    }
+
+    atualizarPainelPontos(variacao) {
+        if (this.mascote) {
+            this.mascote.userData.pontos = this.scoreManager.points;
+            this.mascote.dispatchEvent({
+                type: 'pontos', pontos: variacao, total: this.scoreManager.points
+            });
+        }
+        if (this.painelPontos) this.painelPontos.textContent = `Pontos: ${this.scoreManager.points}`;
     }
 
     init() {
@@ -197,11 +192,24 @@ class Game {
         // Pointer Lock. Ordem obrigatória: SceneBase -> Input -> CameraControls.
         this.input = new Input(this.renderer.domElement);
         this.hud = new Hud();
-        this.hud.atualizarVidas(this.vidas);
+        this.hud.atualizarVidas(this.scoreManager.lives);
         this.painelPontos = document.getElementById('score');
         this.painelMensagem = document.getElementById('phase-message');
+        this.gameState.subscribe((estado) => {
+            if (estado === 'paused') {
+                this.painelMensagem.textContent = 'Pausado';
+            } else if (estado === 'playing') {
+                this.painelMensagem.textContent = '';
+            } else {
+                if (this.mascote) this.mascote.visible = true;  // não deixa o Bilby invisível no fim
+                this.painelMensagem.textContent = estado === 'victory'
+                    ? this.mensagemFinal()
+                    : 'Suas vidas acabaram.';
+                this.hud.mostrarFimDeJogo(this.scoreManager.points, estado);
+            }
+        });
         this.scene.addEventListener('queda', ({ penalidade }) => {
-            if (this.estado !== 'jogando') return;
+            if (this.gameState.state !== 'playing') return;
             // A máscara anula a "morte": sem perder vida nem pontos. A queda ainda
             // devolve o personagem ao último piso seguro (cameraControls.js).
             if (this.poderMascara.absorverDano()) return;
@@ -219,7 +227,15 @@ class Game {
             this.mascote = mascot;
             this.cameraControls.setTarget(mascot);
             this.combate = new Combate(this.scene, mascot, {
-                aoPontuar: (pontos) => this.alterarPontos(pontos),
+                aoPontuar: (pontos, objeto) => {
+                    if (objeto.name === 'cobra-patrulha') {
+                        this.alterarPontos(pontos);
+                    } else {
+                        const pontosAnteriores = this.scoreManager.points;
+                        this.scoreManager.breakBox(pontos);
+                        this.atualizarPainelPontos(this.scoreManager.points - pontosAnteriores);
+                    }
+                },
                 aoQuebrar: (objeto) => this.aoQuebrarCaixa(objeto),
                 aoGolpear: () => this.cameraControls.golpearNoAr(),
                 aoAlterarColisores: () => {

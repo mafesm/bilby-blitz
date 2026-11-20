@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { getMaterials } from '../materials.js';
-import { PONTOS_CAIXA } from '../config.js';
+import { SCORE } from '../config.js';
 
 // Mesmos caminhos usados em mask.js
 const MASK_MODEL_PATH = './assets/models/mascara1.fbx';
@@ -127,7 +127,7 @@ export function criarCaixaMascara(x, y, z) {
     caixa.userData.solid = true;
     caixa.userData.topWalkable = true;
     caixa.userData.quebravel = true;
-    caixa.userData.pontos = PONTOS_CAIXA;
+    caixa.userData.pontos = SCORE.PONTOS_CAIXA;
 
     // Marca para o sistema de quebra saber o que liberar
     caixa.userData.tipo = 'mascara';
