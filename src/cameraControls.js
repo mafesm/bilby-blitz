@@ -4,15 +4,12 @@ import {
     PLAYER_HALF_WIDTH, GROUND_Y, PENALIDADE_QUEDA, ALTURA_RETORNO_QUEDA,
     SENSIBILIDADE_MOUSE, LIMITE_PITCH_MINIMO, LIMITE_PITCH_MAXIMO, VELOCIDADE_ROTACAO_PERSONAGEM
 } from './config.js';
+import { FisicaPulo, FORCA_PULO, VELOCIDADE_QUIQUE_CAIXA } from './jumpPhysics.js';
 import { alturaPisoEm, pisoSeguroEm, resolverLimitesPercurso, direcaoPercursoEm } from './fase.js';
 
 const MOVE_SPEED = 10;
 const VERTICAL_SPEED = 8;
-const JUMP_FORCE = 11;
-const GRAVITY = 20;
-const QUIQUE_CAIXA = 8;
 const ROTATION_SPEED = 1.5;
-const PLAYER_TURN_SPEED = 10;
 const CAMERA_TURN_SPEED = 3;
 const EIXO_Y = new THREE.Vector3(0, 1, 0);
 
@@ -28,7 +25,8 @@ export class CameraControls {
         this.scene = scene;
         this.target = null;
         this.savedTarget = null; // Guarda a referência do personagem para reconexão
-        this.velocityY = 0;
+        this.pulo = new FisicaPulo();  // buffer, corte, queda rápida, pulo duplo e planeio
+        this.espacoPressionado = false;
         this.onGround = true;
         // Chamado com a caixa quando o personagem pousa em cima de uma quebrável (main.js).
         this.aoPousarEmCaixa = null;
@@ -81,7 +79,7 @@ export class CameraControls {
             // como piso base e somamos aos topos dos colisores (que vêm em
             // coordenadas de mundo), alinhando a física ao referencial do modelo.
             this.chaoBaseY = target.position.y;
-            this.velocityY = 0;
+            this.pulo.reiniciar();
             this.onGround = true;
             this.ultimoPisoSeguro.copy(target.position);
         }
@@ -182,11 +180,22 @@ export class CameraControls {
         return Math.atan2(direcao.x, direcao.z) + Math.PI;
     }
 
+    // Chamado pelo Combate quando o golpe sai. No ar, estende o tempo aéreo.
+    golpearNoAr() {
+        return this.pulo.golpear(this.onGround);
+    }
+
     updateTarget(deltaTime) {
-        if (this.input.isPressed('Space') && this.onGround) {
-            this.velocityY = JUMP_FORCE;
-            this.onGround = false;
+        // Pulo: no chão pula, no ar dá o pulo duplo, perto do chão guarda no buffer.
+        const espacoApertado = this.input.isPressed('Space');
+        const espacoSegurado = this.input.isDown('Space');
+        if (espacoApertado) {
+            if (this.pulo.pressionar(this.onGround) !== 'buffer') this.onGround = false;
         }
+        // Soltar o botão enquanto sobe corta o pulo (pulo curto x pulo longo).
+        if (this.espacoPressionado && !espacoSegurado) this.pulo.soltar();
+        else if (espacoApertado && !espacoSegurado) this.pulo.soltar();  // toque mais rápido que um frame
+        this.espacoPressionado = espacoSegurado;
 
         // Mouse → yaw/pitch. Com o Pointer Lock inativo, consumirMouseDelta()
         // devolve (0, 0), mantendo yaw/pitch inalterados.
@@ -231,8 +240,9 @@ export class CameraControls {
         const pos = this.target.position;
         const pesYAnterior = pos.y;
         const estavaNoChao = this.onGround;
-        this.velocityY -= GRAVITY * deltaTime;
-        const proximaAltura = pos.y + this.velocityY * deltaTime;
+        if (this.pulo.passo(deltaTime, this.onGround) === 'pulo') this.onGround = false;
+        this.pulo.aplicarGravidade(deltaTime);
+        const proximaAltura = pos.y + this.pulo.velocidadeY * deltaTime;
         this.movement.set(0, 0, 0);
         if (this.input.isDown('KeyW')) this.movement.z -= 1;
         if (this.input.isDown('KeyS')) this.movement.z += 1;
@@ -260,17 +270,18 @@ export class CameraControls {
         pos.y = proximaAltura;
         const piso = alturaPisoEm(pos.x, pos.z, PLAYER_HALF_WIDTH) + this.chaoBaseY;
         const { altura: chao, colisor: colisorChao } = escolherChao(pos.x, pos.z, PLAYER_HALF_WIDTH, pesYAnterior, this.colisores, piso, this.chaoBaseY);
-        this.onGround = this.velocityY <= 0 && pos.y <= chao && pesYAnterior >= chao - 0.05;
+        this.onGround = this.pulo.velocidadeY <= 0 && pos.y <= chao && pesYAnterior >= chao - 0.05;
         const caixaPisada = colisorChao?.objeto;
-        if (this.onGround && !estavaNoChao && caixaPisada?.userData.quebravel) {
+        if (this.onGround && !estavaNoChao && this.pulo.noArPorPulo && caixaPisada?.userData.quebravel) {
             // Caiu em cima de uma caixa quebrável: ela quebra e o personagem quica.
             pos.y = chao;
-            this.velocityY = this.input.isDown('Space') ? JUMP_FORCE : QUIQUE_CAIXA;
+            const segurandoPulo = this.input.isDown('Space');
+            this.pulo.quicar(segurandoPulo ? FORCA_PULO : VELOCIDADE_QUIQUE_CAIXA, segurandoPulo);
             this.onGround = false;
             this.aoPousarEmCaixa?.(caixaPisada);
         } else if (this.onGround) {
             pos.y = chao;
-            this.velocityY = 0;
+            this.pulo.pousar();
             if (Math.abs(pos.y - this.chaoBaseY - GROUND_Y) < 0.01 && pisoSeguroEm(pos.x, pos.z)) {
                 this.ultimoPisoSeguro.copy(pos);
             }
@@ -278,7 +289,7 @@ export class CameraControls {
 
         if (pos.y - this.chaoBaseY < ALTURA_RETORNO_QUEDA) {
             pos.copy(this.ultimoPisoSeguro);
-            this.velocityY = 0;
+            this.pulo.reiniciar();
             this.onGround = true;
             this.scene?.dispatchEvent({ type: 'queda', penalidade: PENALIDADE_QUEDA });
         }

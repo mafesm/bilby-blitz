@@ -221,6 +221,7 @@ class Game {
             this.combate = new Combate(this.scene, mascot, {
                 aoPontuar: (pontos) => this.alterarPontos(pontos),
                 aoQuebrar: (objeto) => this.aoQuebrarCaixa(objeto),
+                aoGolpear: () => this.cameraControls.golpearNoAr(),
                 aoAlterarColisores: () => {
                     this.cameraControls.rebuildColliders();
                     this.cobras.forEach((cobra) => cobra.atualizarColisores(this.scene));

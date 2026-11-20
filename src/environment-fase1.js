@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GROUND_Y, SCENE_BACKGROUND_COLOR } from './config.js';
-import { ABERTURAS, LIMITES_TERRENO, TRECHOS_PERCURSO, ESPESSURA_PISO, POSICAO_BANDEIRA, dentroDaAbertura } from './fase.js';
+import { ABERTURAS, LIMITES_TERRENO, TRECHOS_PERCURSO, ESPESSURA_PISO, POSICAO_BANDEIRA, dentroDaAbertura, direcaoPercursoEm } from './fase.js';
 import { criarArvore } from './components/criarArvore.js';
 import { criarArvoreTresCones } from './components/criarArvoreTresCones.js';
 import { criarPedra } from './components/criarPedra.js';
@@ -25,6 +25,21 @@ function criarBloco(material, largura, altura, comprimento, x, y, z) {
     bloco.position.set(x, y, z);
     bloco.receiveShadow = true;
     return bloco;
+}
+
+// Caixas um pouco menores que o bloco de pedra (1,5) para dar mais folga nos pulos.
+const ESCALA_CAIXA = 0.85;
+const LADO_CAIXA = 1.5 * ESCALA_CAIXA;
+
+// Posiciona a caixa apoiada em baseY (topo da superfície) e vira o desenho da frente
+// (+Z no modelo) para quem vem pelo percurso: depois da curva, para -X.
+function colocarCaixa(fase, caixa, x, baseY, z) {
+    caixa.scale.setScalar(ESCALA_CAIXA);
+    caixa.position.set(x, baseY + LADO_CAIXA / 2, z);
+    const sentido = direcaoPercursoEm(x, z);
+    caixa.rotation.y = Math.round(sentido / (Math.PI / 2)) * (Math.PI / 2);
+    fase.add(caixa);
+    return caixa;
 }
 
 export function createEnvironment(scene) {
@@ -69,33 +84,51 @@ export function createEnvironment(scene) {
     fase.add(criarTronco(3, -58));
     fase.add(criarTronco(22.5, -75));
 
-    // Madeira: caixas espalhadas e destrutíveis com X.
+        // Madeira: caixas espalhadas e destrutíveis com X ou pulando em cima.
+    // Todas passam por colocarCaixa(): escala única e frente virada para o jogador.
     const caixas = [
         [0, -8], [-2, -20], [2, -20], [2.7, -49], [-2, -66],
         [22, -72], [41, -78]
     ];
-    for (const [x, z] of caixas) fase.add(criarCaixa(x, GROUND_Y + 0.75, z));
+    for (const [x, z] of caixas) colocarCaixa(fase, criarCaixa(0, 0, 0), x, GROUND_Y, z);
 
     const caixasAzuis = [
+        // [x, altura da base acima do chão, z]
         // Atrás do ponto de partida: quem só corre para frente nunca vê.
-        [-3.9, GROUND_Y + 0.75, 3.2],
+        [-3.9, 0, 3.2],
         // No topo da pilha de 2 blocos da rota alternativa (exige subir e golpear pulando).
-        [0, GROUND_Y + 0.75 + 2 * 1.5, -51],
+        [0, 2 * 1.5, -51],
         // Canto do topo da parede de 4 blocos: só quem sobe a escadinha chega.
-        [44.25, GROUND_Y + 0.75 + 4 * 1.5, -79.25]
+        [44.25, 4 * 1.5, -79.25]
     ];
-    for (const [x, y, z] of caixasAzuis) fase.add(criarCaixaEstrela(x, y, z));
+    for (const [x, base, z] of caixasAzuis) {
+        colocarCaixa(fase, criarCaixaEstrela(0, 0, 0), x, GROUND_Y + base, z);
+    }
 
-    
     // Relógio: logo no começo, para o speedrun valer o percurso inteiro.
-    fase.add(criarCaixaRelogio(3.2, GROUND_Y + 0.75, -4));
+    colocarCaixa(fase, criarCaixaRelogio(0, 0, 0), 3.2, GROUND_Y, -4);
 
     // Máscaras: uma antes de cada trecho difícil (poço, pilha e vão da curva).
     const caixasMascara = [[-3.3, -12], [-3.5, -53.5], [36, -78.5]];
-    for (const [x, z] of caixasMascara) fase.add(criarCaixaMascara(x, GROUND_Y + 0.75, z));
+    for (const [x, z] of caixasMascara) colocarCaixa(fase, criarCaixaMascara(0, 0, 0), x, GROUND_Y, z);
 
     // Vida: perto do segundo poço, como recompensa antes do trecho final da curva.
-    fase.add(criarCaixaVida(3.3, GROUND_Y + 0.75, -66));
+    colocarCaixa(fase, criarCaixaVida(0, 0, 0), 3.3, GROUND_Y, -66);
+
+    // Grupo de teste do quique: um degrau de pedra ao lado de uma fileira de caixas.
+    // Do degrau (1,5) para a caixa (1,275) o Bilby anda e desce, não cai de um pulo,
+    // então a caixa não quebra e dá para caminhar por cima delas.
+    const zTeste = -26;
+    const xInicioFileira = -2.25 + LADO_CAIXA / 2;  // encostada no degrau de pedra
+    fase.add(criarPlataformaPedra(-3, GROUND_Y + 0.75, zTeste));
+    for (let i = 0; i < 3; i++) {
+        colocarCaixa(fase, criarCaixa(0, 0, 0), xInicioFileira + i * LADO_CAIXA, GROUND_Y, zTeste);
+        colocarCaixa(fase, criarCaixa(0, 0, 0), xInicioFileira + i * LADO_CAIXA, GROUND_Y, zTeste - LADO_CAIXA);
+    }
+    // Uma caixa em cima de outra: testa pousar, quebrar e quicar em sequência.
+    colocarCaixa(fase, criarCaixa(0, 0, 0), xInicioFileira + LADO_CAIXA, GROUND_Y + LADO_CAIXA, zTeste);
+    // Uma caixa isolada no chão, para o pulo simples.
+    colocarCaixa(fase, criarCaixa(0, 0, 0), 3, GROUND_Y, zTeste);
     
     // A primeira pilha é a base de lançamento para o vão de 12 unidades.
     // As demais pilhas mantêm uma rota alternativa ao lado.

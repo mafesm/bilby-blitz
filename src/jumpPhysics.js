@@ -1,21 +1,24 @@
 // Física vertical do pulo do personagem: jump buffering, jump cutting, queda
 // rápida (gravidade assimétrica), pulo duplo e planeio do golpe aéreo.
+// Lógica pura, sem Three.js nem DOM, para poder ser testada isoladamente.
+// O cameraControls.js cuida de colisão/chão e chama estes métodos.
 
-export const GRAVIDADE = 30;            // u/s²
-export const FORCA_PULO = 8;            // u/s, pulo a partir do chão
-export const FORCA_PULO_DUPLO = 7;      // u/s, pulo no ar
+export const GRAVIDADE = 38;            // u/s²
+export const FORCA_PULO = 11.5;           // u/s, pulo a partir do chão
+export const FORCA_PULO_DUPLO = 9;     // u/s, pulo no ar
 export const PULOS_NO_AR = 1;           // 1 = pulo duplo
+export const VELOCIDADE_QUIQUE_CAIXA = 10;  // u/s, quique ao pousar numa caixa (sem segurar Space)
 
 export const TEMPO_BUFFER_PULO = 0.12;  // s: pulo apertado um pouco antes de pousar é guardado
 export const FATOR_CORTE_PULO = 0.5;    // soltar o botão subindo multiplica velocidadeY por isto
-export const MULTIPLICADOR_QUEDA = 1.5; // gravidade x1.5 quando velocidadeY < 0
+export const MULTIPLICADOR_QUEDA = 1.3; // gravidade x1.3 quando velocidade Y < 0
 export const VELOCIDADE_TERMINAL = 30;  // u/s, limite da queda
 
 // Golpe no ar: uma vez por salto, dá um empurrãozinho para cima e deixa a gravidade
 // bem mais fraca por DURACAO_PLANEIO s, estendendo o tempo aéreo.
-export const DURACAO_PLANEIO = 0.9;
-export const FATOR_GRAVIDADE_PLANEIO = 0.1;
-export const IMPULSO_GOLPE_AEREO = 2;
+export const DURACAO_PLANEIO = 0.5;
+export const FATOR_GRAVIDADE_PLANEIO = 0.6;
+export const IMPULSO_GOLPE_AEREO = 3;
 
 export class FisicaPulo {
     constructor() {
@@ -31,6 +34,7 @@ export class FisicaPulo {
         this.emPulo = false;       // há um pulo em andamento que ainda pode ser cortado
         this.planeioUsado = false;
         this.tempoPlaneio = 0;
+        this.noArPorPulo = false;  // false se saiu do chão andando (ex.: desceu de um degrau)
     }
 
     // Botão de pulo acabou de ser apertado. Devolve o que aconteceu:
@@ -58,6 +62,14 @@ export class FisicaPulo {
     reiniciar() {
         this.pousar();
         this.bufferPulo = 0;
+    }
+
+    // Quique ao pousar numa caixa quebrável: renova os pulos do ar e lança para cima.
+    quicar(velocidade, cortavel = false) {
+        this.pousar();
+        this.velocidadeY = velocidade;
+        this.noArPorPulo = true;
+        this.emPulo = cortavel;  // segurando o botão, soltar ainda corta o quique
     }
 
     // Botão de pulo acabou de ser solto: se ainda está subindo, corta o pulo (uma vez).
@@ -102,5 +114,6 @@ export class FisicaPulo {
 
     iniciarPulo() {
         this.emPulo = true;
+        this.noArPorPulo = true;
     }
 }

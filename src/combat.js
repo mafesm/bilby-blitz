@@ -6,10 +6,11 @@ const DURACAO_DESAPARECIMENTO = 0.35;
 const geometriaOnda = new THREE.RingGeometry(0.75, 1, 40);
 
 export class Combate {
-    constructor(scene, personagem, { aoPontuar, aoAlterarColisores, aoQuebrar = () => {} }) {
+    constructor(scene, personagem, { aoPontuar, aoAlterarColisores, aoQuebrar = () => {}, aoGolpear = () => {} }) {
         this.personagem = personagem;
         this.aoPontuar = aoPontuar;
         this.aoQuebrar = aoQuebrar;
+        this.aoGolpear = aoGolpear;
         this.aoAlterarColisores = aoAlterarColisores;
         this.alvos = new Map();
         this.desaparecendo = [];
@@ -45,6 +46,7 @@ export class Combate {
     golpear() {
         if (this.espera > 0) return;
         this.espera = INTERVALO_GOLPE;
+        this.aoGolpear();  // o golpe no ar estende o tempo aéreo (ver jumpPhysics.js)
         this.tempoOnda = 0;
         this.personagem.getWorldPosition(this.posicao).add(this.deslocamento);
         let alterouColisores = false;
