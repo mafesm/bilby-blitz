@@ -8,6 +8,8 @@ import { FisicaPulo, FORCA_PULO, VELOCIDADE_QUIQUE_CAIXA } from './jumpPhysics.j
 import { alturaPisoEm, pisoSeguroEm, resolverLimitesPercurso, direcaoPercursoEm } from './fase.js';
 
 const MOVE_SPEED = 10;
+const ESCALA_TEMPO_JOGADOR = 0.75; // 1 = normal; menor = tudo (andar, pulo, planeio) mais lento
+const FRACAO_BONUS_VELOCIDADE_NO_AR = 0.2; // 0 = sem bônus no ar; 1 = bônus inteiro (como antes)
 const VERTICAL_SPEED = 8;
 const ROTATION_SPEED = 1.5;
 const CAMERA_TURN_SPEED = 3;
@@ -218,7 +220,7 @@ export class CameraControls {
 
         // Passos pequenos evitam atravessar uma barreira ou pular um buraco
         // inteiro quando um frame demora. O comportamento da câmera é mantido.
-        const tempo = Math.min(Math.max(deltaTime, 0), 0.1);
+        const tempo = Math.min(Math.max(deltaTime, 0), 0.1) * ESCALA_TEMPO_JOGADOR;
         const passos = Math.max(1, Math.ceil(tempo / (1 / 120)));
         for (let i = 0; i < passos; i++) this.simularPasso(tempo / passos);
 
@@ -251,7 +253,8 @@ export class CameraControls {
 
         if (this.movement.lengthSq() > 0) {
             this.movement.applyAxisAngle(EIXO_Y, this.yaw);
-            this.movement.normalize().multiplyScalar(MOVE_SPEED * this.multiplicadorVelocidade * deltaTime);
+            const bonus = this.onGround ? this.multiplicadorVelocidade : 1 + (this.multiplicadorVelocidade - 1) * FRACAO_BONUS_VELOCIDADE_NO_AR;
+            this.movement.normalize().multiplyScalar(MOVE_SPEED * bonus * deltaTime);
 
             const desejada = this.target.position.clone().add(this.movement);
             const dentroDoCaminho = resolverLimitesPercurso(pos, desejada, PLAYER_HALF_WIDTH);

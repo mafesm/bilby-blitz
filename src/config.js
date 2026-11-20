@@ -40,10 +40,10 @@ export const DURACAO_IMUNIDADE_DANO = 1.5; // Depois de tomar dano de uma entida
 export const ALCANCE_GOLPE = 1.6;
 export const INTERVALO_GOLPE = 0.45;
 export const STACKS_MAXIMOS_MASCARA = 3;
-export const DURACAO_INVULNERABILIDADE = 10;
+export const DURACAO_INVULNERABILIDADE = 15;
 export const VELOCIDADE_INVULNERAVEL = 1.5;
 export const RAIO_CONTATO_INVULNERAVEL = 0.8;
-export const META_PONTOS_SPEEDRUN = 1500;
+export const META_PONTOS_SPEEDRUN = 3500;
 
 export const PENALIDADE_QUEDA = 100;
 export const ALTURA_RETORNO_QUEDA = -3;
