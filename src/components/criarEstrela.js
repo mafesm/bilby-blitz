@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { SCORE } from '../config.js';
 
 const TAMANHO = 1.5;
-
 // Geometrias compartilhadas
 const caixaGeometry = new THREE.BoxGeometry(TAMANHO, TAMANHO, TAMANHO);
 const vigaVerticalGeometry = new THREE.BoxGeometry(0.12, 1.5, 0.08);
@@ -57,7 +56,7 @@ export function criarCaixaEstrela(x, y, z) {
     caixa.userData.solid = true;
     caixa.userData.topWalkable = true;
     caixa.userData.quebravel = true;
-    caixa.userData.pontos = SCORE.PONTOS_CAIXA;
+    caixa.userData.pontos = SCORE.PONTOS_CAIXA_AZUL;
     caixa.userData.tipo = 'estrela';
 
     // Molduras azuis nas quatro faces laterais (face 0 = frente, +Z)
